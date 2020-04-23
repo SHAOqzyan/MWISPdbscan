@@ -284,7 +284,7 @@ class myG210:
 	allCoreTBFile='/home/qzyan/WORK/projects/maddalena/data/G200220DuchampCO13.fit'
 	
 	
-	WISEYSOTB=Table.read("/home/qzyan/WORK/projects/maddalena/WISEYSOG210.fit")
+	#WISEYSOTB=Table.read("/home/qzyan/WORK/projects/maddalena/WISEYSOG210.fit")
 	
  	
 

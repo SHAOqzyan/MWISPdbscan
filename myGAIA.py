@@ -33,26 +33,26 @@ import matplotlib.gridspec as gridspec
 from  distanceTB import disTB
 #from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText
 from matplotlib.offsetbox import AnchoredText
-from distanceMCMC5p import getDisAndErrorMCMCTrucatedGau5p
-from sklearn.isotonic import IsotonicRegression
-from distanceMCMCLinearGauss import getDisAndErrorMCMCTrucatedGau6p
+#from distanceMCMC5p import getDisAndErrorMCMCTrucatedGau5p
+#from sklearn.isotonic import IsotonicRegression
+#from distanceMCMCLinearGauss import getDisAndErrorMCMCTrucatedGau6p
 
-from distanceMCMCTwoGauss  import getDisAndErrorMCMCG2
+#from distanceMCMCTwoGauss  import getDisAndErrorMCMCG2
 from termcolor import colored 
 import readline
 #this  module is used to calculate the distance with Gaia ag extinction
 
 #from gaiaAVTB import GAIAAV
 
-from gaiaAVFlagTB import GAIAAVFlag
+#from gaiaAVFlagTB import GAIAAVFlag
 
 
-from gaiaTB import GAIATB
+#from gaiaTB import GAIATB
 #from gaiaTBCor import GAIATB
 
-doAG= GAIATB()
+#doAG= GAIATB()
 
-doAV= GAIAAVFlag()  #avTB
+#doAV= GAIAAVFlag()  #avTB
 
 class GAIADIS:
 	#name="GSF_Gaia2_all"

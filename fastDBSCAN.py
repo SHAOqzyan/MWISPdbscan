@@ -16,7 +16,7 @@ import sys
 from skimage.morphology import erosion, dilation
 from scipy.ndimage import label, generate_binary_structure,binary_erosion,binary_dilation
 from sklearn.cluster import DBSCAN
-from madda import  myG210
+#from madda import  myG210
 from mpl_toolkits.axes_grid.anchored_artists import AnchoredText
 import seaborn as sns
 

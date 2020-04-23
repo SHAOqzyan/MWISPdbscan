@@ -5,7 +5,7 @@ import MySQLdb
 from astropy.table import   Table
 import numpy as np
 
-import psycopg2
+#import psycopg2
 
 from gaiaTB import GAIATB
  

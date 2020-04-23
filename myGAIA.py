@@ -38,7 +38,7 @@ from matplotlib.offsetbox import AnchoredText
 #from distanceMCMCLinearGauss import getDisAndErrorMCMCTrucatedGau6p
 
 #from distanceMCMCTwoGauss  import getDisAndErrorMCMCG2
-from termcolor import colored 
+#from termcolor import colored
 import readline
 #this  module is used to calculate the distance with Gaia ag extinction
 

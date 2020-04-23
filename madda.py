@@ -305,27 +305,27 @@ class myG210:
 		#read three fits
 		
 		
-		self.CO12HDU= fits.open(self.COFile12)[0]
+		#self.CO12HDU= fits.open(self.COFile12)[0]
 		
-		self.CO13HDU= fits.open(self.COFile13)[0]
+		#self.CO13HDU= fits.open(self.COFile13)[0]
 
 		
 		
 		
-		self.CO12DATA,self.COHEADER=self.doFITS.readFITS(self.COFile12)
-		self.CO12DATASM,dummy=self.doFITS.readFITS(self.SMCOFile12)
+		#self.CO12DATA,self.COHEADER=self.doFITS.readFITS(self.COFile12)
+		#self.CO12DATASM,dummy=self.doFITS.readFITS(self.SMCOFile12)
  
  
  
-		self.W345CO12DATA,self.W345COHEADER=self.doFITS.readFITS(self.W345FITS12)
+		#self.W345CO12DATA,self.W345COHEADER=self.doFITS.readFITS(self.W345FITS12)
 
-		self.WCSW345CO12=WCS(self.W345COHEADER)
+		#self.WCSW345CO12=WCS(self.W345COHEADER)
  
  
 		#self.WCSCO12=WCS(self.convert4DTo3D(self.COHEADER)  )
-		self.WCSCO12=WCS( self.COHEADER   )
+		#self.WCSCO12=WCS( self.COHEADER   )
 
-		self.CO13DATA,dummy=self.doFITS.readFITS(self.COFile13)
+		#self.CO13DATA,dummy=self.doFITS.readFITS(self.COFile13)
 		#del self.COHEADER["CTYPE4"]
 		#del self.COHEADER["CDELT4"]
 		#del self.COHEADER["CRPIX4"]
@@ -334,14 +334,14 @@ class myG210:
 		
 		
 		#aa,self.CO12DATA=myFITS.readFITS(self.CO12)
-		self.YSOTB=Table.read(self.YSOTBFile)
+		#self.YSOTB=Table.read(self.YSOTBFile)
 	 
 		#read wise catalog
 		
-		self.WISEHIICat=Table.read(self.WISEHIICatName)
-		self.IRASHIICat=Table.read(self.IRASHIIName)
+		#self.WISEHIICat=Table.read(self.WISEHIICatName)
+		#self.IRASHIICat=Table.read(self.IRASHIIName)
 
-		self.gaiaDisDo=GAIADIS()
+		#self.gaiaDisDo=GAIADIS()
 		self.doPowerLaw=myPowerLaw(2.3,0.5,1000)
 
 

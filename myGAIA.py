@@ -44,7 +44,7 @@ import readline
 
 #from gaiaAVTB import GAIAAV
 
-#from gaiaAVFlagTB import GAIAAVFlag
+from gaiaAVFlagTB import GAIAAVFlag
 
 
 from gaiaTB import GAIATB

@@ -7,4 +7,4 @@ Most of the files are useless and they are copied here only to make the script r
 # example.py
 Please make sure the example.py file run correctly, and see the DBSCAN results in DBSCANresults path
 
-You may need to lots of python packages, which are also useless to the DBSCAN.
+You may need to install lots of python packages, which are also useless to the DBSCAN.

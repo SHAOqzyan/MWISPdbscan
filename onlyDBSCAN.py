@@ -32,14 +32,14 @@ class allDBSCAN:
 
     #
 
-    rootPath="./newDBSCAN/"
+    rootPath="./"
 
     emptyFITS = "G2650LocalEmpty.fits"
     rmsCO12=0.5 # K
 
-    tmpPath= rootPath+"tmpOUT/"  #"./DBSCANTest/"
-
-    testAllPath =  rootPath+"testAll/"
+    #tmpPath= rootPath+"tmpOUT/"  #"./DBSCANTest/"
+    tmpPath="./tmpFiles/"
+    testAllPath =tmpPath  # rootPath+"testAll/"
 
     con1PtsAll= np.arange(3,8,1)
     con2PtsAll= np.arange(3,20,1)
@@ -87,10 +87,11 @@ class allDBSCAN:
     con3Str = "Connectivity 3"
 
 
-    fitsPath="/home/qzyan/WORK/myDownloads/MWISPcloud/newDBSCAN/testAll/"
+    #fitsPath="/home/qzyan/WORK/myDownloads/MWISPcloud/newDBSCAN/testAll/"
+
+    fitsPath="./DBSCANresults/"
 
 
-    tmpPath="/home/qzyan/WORK/myDownloads/MWISPcloud/tmpFiles/"
 
     saveTag = "G2650Local"
 
@@ -108,6 +109,12 @@ class allDBSCAN:
 
     def __init__(self):
         pass
+
+        if not os.path.isdir(self.fitsPath):
+            os.system("mkdir "+self.fitsPath)
+
+        if not os.path.isdir(self.tmpPath):
+            os.system("mkdir "+self.tmpPath)
 
 
     def getMiddleMinPts(self, minPtList ):
@@ -167,7 +174,7 @@ class allDBSCAN:
         # step 1 compute DBSCAN
         print "Step 1: computing DBSCAN......"
 
-        dbscanLabelFITS = doDBSCAN.computeDBSCAN(dataCO, headCO, min_sigma=minValue, min_pix=MinPts,   connectivity=connectivity, region=self.testAllPath + saveTag, rmsFITS=None,     inputRMS=inputRMS)
+        dbscanLabelFITS = doDBSCAN.computeDBSCAN(dataCO, headCO, min_sigma=minValue, min_pix=MinPts,   connectivity=connectivity, region=self.fitsPath + saveTag, rmsFITS=None,     inputRMS=inputRMS)
 
         if onlyGetFITS:
             return dbscanLabelFITS
@@ -4247,7 +4254,7 @@ doAllDBSCAN=allDBSCAN()
 spectralSavePath = "/home/qzyan/WORK/myDownloads/MWISPcloud/spectraSave/"
 
 
-if 1: # G13015
+if 0: # G13015
     rawFITS="/home/qzyan/WORK/dataDisk/G140/G130150merge12.fits"
     #
 
@@ -4273,7 +4280,7 @@ if 0:#
 
 #Average flux alpha error,  0.02146005509641873
 #The mean flux alpha is 1.79, error is 0.03
-if 1: #test get TBList #
+if 0: #test get TBList #
 
     pass
     #doAllDBSCAN.plotNumber()

@@ -8,7 +8,12 @@ doAllDBSCAN=allDBSCAN()
 if 1: # Q1subfits test
     ############################################parameter setings
     #rawFITS="/home/qzyan/WORK/dataDisk/MWISP/G120/100_150_U.fits" #input raw coFITS
-    rawFITS="Q1Sub.fits" #input raw coFITS
+    #saveTag = "Q2test"  # your project code
+
+    if 1:#Q2Per
+        rawFITS="/home/qzyan/WORK/dataDisk/MWISP/G120/100_150_U_per.fits" #input raw coFITS
+        saveTag="Q2Per" #your project code
+
 
 
     cutoff=2 #in units of sigma
@@ -18,7 +23,6 @@ if 1: # Q1subfits test
     ########################
 
     doAllDBSCAN.rmsCO12= fitsRMS # K, set the rms
-    saveTag="Q2Test" #your project code
 
 
 

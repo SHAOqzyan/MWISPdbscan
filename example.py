@@ -11,7 +11,7 @@ if 1: # Q1subfits test
     #saveTag = "Q2test"  # your project code
 
     if 1:#Q2Per
-        rawFITS="/home/qzyan/WORK/dataDisk/MWISP/G120/100_150_U_per.fits" #input raw coFITS
+        rawFITS="/sci/yansun/100_150/100_150_U_per.fits" #input raw coFITS
         saveTag="Q2Per" #your project code
 
 

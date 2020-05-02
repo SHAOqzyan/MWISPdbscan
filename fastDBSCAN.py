@@ -33,7 +33,7 @@ gaiaDis=GAIADIS()
 
 doFITS=myFITS()
 
-doG210 = myG210()
+#doG210 = myG210()
 
 def weighted_avg_and_std(values, weights):
 	"""
@@ -380,9 +380,8 @@ class myDBSCAN(object):
 
 			self.getCatFromLabelArray(COFITS,saveLabel,self.TBModel,saveMarker=saveMarker,  minPix=min_pix,rms= min_sigma  )
 
-
-
-	def getCatFromLabelArray(self,  CO12FITS,labelFITS,TBModel,minPix=8,rms=2 ,   saveMarker="", peakSigma=3,region="",pureDBSCAN=False):
+	def getCatFromLabelArray(self, CO12FITS, labelFITS, TBModel, minPix=8, rms=2, saveMarker="", peakSigma=3, region="",
+							 pureDBSCAN=False):
 		"""
 		Extract catalog from label fits, the minPix and rms is only used for saving
 		:param labelArray:
@@ -390,228 +389,224 @@ class myDBSCAN(object):
 		:return:
 		"""
 
-		#do not make any selection here, because of the closeness of many clouds, some cloud may have pixels less than 8, we should keep them
-		#they are usefull to mask edge sources..., and to clean fits
+		print "The rms is ", self.rms
 
-		if saveMarker=="":
-			saveName= region+"DBSCAN{}_P{}Cat.fit".format(rms,minPix)
+		# do not make any selection here, because of the closeness of many clouds, some cloud may have pixels less than 8, we should keep them
+		# they are usefull to mask edge sources..., and to clean fits
+
+		if saveMarker == "":
+			saveName = region + "DBSCAN{}_P{}Cat.fit".format(rms, minPix)
 
 		else:
-			saveName=saveMarker+".fit"
+			saveName = saveMarker + ".fit"
 
-		clusterTBOld=Table.read( TBModel )
+		clusterTBOld = Table.read(TBModel)
 
 		###
-		dataCO, headCO = myFITS.readFITS( CO12FITS )
+		dataCO, headCO = myFITS.readFITS(CO12FITS)
 
-		#dataCO=np.nan_to_num(dataCO), should not have Nan values
+		# dataCO=np.nan_to_num(dataCO), should not have Nan values
 
+		dataCluster, headCluster = myFITS.readFITS(labelFITS)
 
-		dataCluster , headCluster=myFITS.readFITS( labelFITS )
-
-		#create a data cube to find points that satisfy to have three consecutive points, can we find them ?
+		# create a data cube to find points that satisfy to have three consecutive points, can we find them ?
 		minV = np.nanmin(dataCluster[0])
-
 
 		Nz, Ny, Nx = dataCluster.shape
 
-		#consecutiveData= np.zeros( ( Nz+2,Ny,Nx   )   )
+		# consecutiveData= np.zeros( ( Nz+2,Ny,Nx   )   )
 
+		# b= dataCluster> minV
 
-		#b= dataCluster> minV
+		# consecutiveData[1:-1]= dataCluster> minV
+		# doSum= consecutiveData[0:-2]+consecutiveData[1:-1]+ consecutiveData[2: ]
+		# consecutivepoints
+		# P3 = doSum>=3
 
+		wcsCloud = WCS(headCluster)
 
-		#consecutiveData[1:-1]= dataCluster> minV
-		#doSum= consecutiveData[0:-2]+consecutiveData[1:-1]+ consecutiveData[2: ]
-		#consecutivepoints
-		#P3 = doSum>=3
+		clusterIndex1D = np.where(dataCluster > minV)
+		clusterValue1D = dataCluster[clusterIndex1D]
 
-		wcsCloud=WCS( headCluster )
+		Z0, Y0, X0 = clusterIndex1D
 
-		clusterIndex1D= np.where( dataCluster>minV )
-		clusterValue1D=  dataCluster[clusterIndex1D ]
+		newTB = Table(clusterTBOld[0])
+		newTB["sum"] = newTB["flux"]
 
-		Z0,Y0,X0 = clusterIndex1D
+		newTB["l_rms"] = newTB["v_rms"]
+		newTB["b_rms"] = newTB["v_rms"]
 
-		newTB= Table( clusterTBOld[0])
-		newTB["sum"]=newTB["flux"]
+		newTB["pixN"] = newTB["v_rms"]
+		newTB["peak"] = newTB["v_rms"]
 
-		newTB["l_rms"]=newTB["v_rms"]
-		newTB["b_rms"]=newTB["v_rms"]
+		newTB["peakL"] = newTB["v_rms"]
+		newTB["peakB"] = newTB["v_rms"]
+		newTB["peakV"] = newTB["v_rms"]
+		newTB["area_accurate"] = newTB["v_rms"]  # the column of area_accurate need to cos(b) facor
 
-		newTB["pixN"]=newTB["v_rms"]
-		newTB["peak"]=newTB["v_rms"]
+		# newTB["Nchannel"]=newTB["v_rms"] #number of channels, whis is used to sellect
 
-		newTB["peakL"]=newTB["v_rms"]
-		newTB["peakB"]=newTB["v_rms"]
-		newTB["peakV"]=newTB["v_rms"]
-		newTB["area_accurate"]=newTB["v_rms"] # the column of area_accurate need to cos(b) facor
+		newTB["allChannel"] = newTB["v_rms"]  # number channel involved
+		newTB["has22"] = newTB["v_rms"]  # number channel involved
 
-		#newTB["Nchannel"]=newTB["v_rms"] #number of channels, whis is used to sellect
+		zeroProjection = np.zeros((Ny, Nx))  # one zero channel, used to get the projection area and
+		zeroProjectionExtend = np.zeros((Ny + 1, Nx + 1))
 
-		newTB["allChannel"]=newTB["v_rms"] # number channel involved
-		newTB["has22"]=newTB["v_rms"] # number channel involved
+		idCol = "_idx"
 
+		# count all clusters
 
-		zeroProjection =  np.zeros( ( Ny , Nx  ) ) # one zero channel, used to get the projection area and
-		zeroProjectionExtend = np.zeros( ( Ny+1, Nx+1 ) )
+		# ids,count=np.unique(dataCluster,return_counts=True )
+		ids, count = np.unique(clusterValue1D, return_counts=True)
+		GoodIDs = ids
+		GoodCount = count
+		print "Total number of turnks? ", len(GoodIDs)
+		# print "Total number of Good Trunks? ",len(GoodIDs)
 
+		# dataCO,headCO=doFITS.readFITS( CO12FITS )
+		widgets = ['Recalculating cloud parameters: ', Percentage(), ' ', Bar(marker='0', left='[', right=']'), ' ',
+				   ETA(), ' ', FileTransferSpeed()]  # see docs for other options
 
+		catTB = newTB.copy()
+		catTB.remove_row(0)
 
-		idCol="_idx"
-
-
-		#count all clusters
-
-		#ids,count=np.unique(dataCluster,return_counts=True )
-		ids,count=np.unique(  clusterValue1D,  return_counts=True  )
-		GoodIDs=ids
-		GoodCount=count
-		print "Total number of turnks? ",len(ids)
-		#print "Total number of Good Trunks? ",len(GoodIDs)
-
-		#dataCO,headCO=doFITS.readFITS( CO12FITS )
-		widgets = ['Recalculating cloud parameters: ', Percentage(), ' ', Bar(marker='0',left='[',right=']'),  ' ', ETA(), ' ', FileTransferSpeed()] #see docs for other options
+		# zeroP
+		# remove any cloud with voxels less than minPix
+		selectCondictio = GoodCount >= 16  #
+		GoodCount = GoodCount[selectCondictio]
+		GoodIDs = GoodIDs[selectCondictio]
 
 		pbar = ProgressBar(widgets=widgets, maxval=len(GoodIDs))
 		pbar.start()
+		print len(GoodIDs), "left after First selection"
+		for i in range(len(GoodIDs)):
 
-		catTB=newTB.copy()
-		catTB.remove_row(0)
+			# i would be the newID
+			newID = GoodIDs[i]
+			pixN = GoodCount[i]
 
-		#zeroP
-
-		for i in  range(len(GoodIDs)) :
-
-			#i would be the newID
-			newID= GoodIDs[i]
-			pixN=GoodCount[i]
-
-			newRow=newTB[0]
+			newRow = newTB[0]
 
 			newRow[idCol] = newID
 
-			cloudIndex=self.getIndices(Z0,Y0,X0,clusterValue1D,newID)
+			cloudIndex = self.getIndices(Z0, Y0, X0, clusterValue1D, newID)
 
-			coValues=  dataCO[ cloudIndex ]
+			coValues = dataCO[cloudIndex]
 
-			#P3Value= P3[cloudIndex] # used to find
+			# P3Value= P3[cloudIndex] # used to find
 
-			#sortedCO=np.sort(coValues)
-			#peak = sortedCO[-1] #np.max( coValues)
-			#peak2=sortedCO[-2]
-			peak= np.max(coValues)
-			cloudV=cloudIndex[0]
-			cloudB=cloudIndex[1]
-			cloudL=cloudIndex[2]
+			# sortedCO=np.sort(coValues)
+			# peak = sortedCO[-1] #np.max( coValues)
+			# peak2=sortedCO[-2]
 
-			peakIndex=coValues.argmax()
+			cloudV = cloudIndex[0]
+			cloudB = cloudIndex[1]
+			cloudL = cloudIndex[2]
+			###############
+			diffVs = np.unique(cloudV)
+
+			if len(diffVs) < 3:  # reject all cloud that has channels less than 3 channels
+				continue
+
+			peak = np.max(coValues)
+			################################################
+			# remve all clouds less than 3 sigma
+			if peak < 3 * self.rms:
+				continue
+
+			peakIndex = coValues.argmax()
 
 			peakV = cloudV[peakIndex]
 			peakB = cloudB[peakIndex]
 			peakL = cloudL[peakIndex]
 
-			#get the exact peak position, which would be used to
+			# get the exact peak position, which would be used to
 
-			projectIndex= tuple( [cloudB, cloudL ] )
+			projectIndex = tuple([cloudB, cloudL])
 
-			zeroProjection[projectIndex] =1
+			zeroProjection[projectIndex] = 1
 
-			#calculate the accurate
+			# calculate the accurate
 
-			indexB2D,indexL2D=np.where(zeroProjection==1 )
+			indexB2D, indexL2D = np.where(zeroProjection == 1)
 
+			_, BS2D, LS2D = wcsCloud.wcs_pix2world(indexL2D, indexB2D, 0, 0)
 
+			area_accurate = np.sum(np.cos(np.deg2rad(BS2D))) * 0.25
 
-			_,BS2D, LS2D = wcsCloud.wcs_pix2world(indexL2D,indexB2D,  0, 0)
+			newRow["area_accurate"] = area_accurate
 
+			zeroProjectionExtend[0:-1, 0:-1] = zeroProjection
 
+			sumCO = np.sum(coValues)
 
+			Vcen, Vrms = weighted_avg_and_std(cloudV, coValues)
+			Bcen, Brms = weighted_avg_and_std(cloudB, coValues)
+			Lcen, Lrms = weighted_avg_and_std(cloudL, coValues)
 
-			area_accurate=np.sum( np.cos( np.deg2rad(BS2D) )    )*0.25
+			# calculate the exact area
 
-			newRow["area_accurate"]= area_accurate
+			# LBcore = zip(cloudB, cloudL)
+			# pixelsN= {}.fromkeys(LBcore).keys() #len( set(LBcore) )
+			# area_exact=len(pixelsN)*0.25 #arc mins square
+			area_exact = np.sum(zeroProjection) * 0.25
+			# print area_exact,area_accurate
+			# find the 2*2 patter
 
+			sum22 = zeroProjectionExtend[0:-1, 0:-1] + zeroProjectionExtend[0:-1, 1:] + zeroProjectionExtend[1:,
+																						0:-1] + zeroProjectionExtend[1:,
+																								1:]
 
-
-			zeroProjectionExtend[0:-1,0:-1]=zeroProjection
-
-			sumCO=np.sum( coValues )
-
-
-
-
-			Vcen,Vrms= weighted_avg_and_std(cloudV, coValues )
-			Bcen,Brms= weighted_avg_and_std(cloudB, coValues )
-			Lcen,Lrms= weighted_avg_and_std(cloudL, coValues )
-
-			#calculate the exact area
-
-			#LBcore = zip(cloudB, cloudL)
-			#pixelsN= {}.fromkeys(LBcore).keys() #len( set(LBcore) )
-			#area_exact=len(pixelsN)*0.25 #arc mins square
-			area_exact= np.sum( zeroProjection )*0.25
-			#print area_exact,area_accurate
-			#find the 2*2 patter
-
-			sum22= zeroProjectionExtend[0:-1,0:-1] +  zeroProjectionExtend[0:-1,1: ]+ zeroProjectionExtend[1: , 0 :-1]+zeroProjectionExtend[1: , 1: ]
-
-			#if any pixel>4:
+			# if any pixel>4:
 
 			if 4 in sum22:
 				newRow["has22"] = 1
 			else:
 				newRow["has22"] = 0
 
-			diffVs= np.unique(cloudV)
+			# dataClusterNew[cloudIndex] =newID
 
-			#dataClusterNew[cloudIndex] =newID
+			# save values
+			newRow["pixN"] = pixN
+			newRow["peak"] = peak
 
-			#save values
-			newRow["pixN"]= pixN
-			newRow["peak"]= peak
+			newRow["peakV"] = peakV
+			newRow["peakB"] = peakB
+			newRow["peakL"] = peakL
 
-			newRow["peakV"]= peakV
-			newRow["peakB"]= peakB
-			newRow["peakL"]= peakL
+			# newRow["peak2"]= peak2
 
-			#newRow["peak2"]= peak2
+			newRow["sum"] = sumCO
+			newRow["area_exact"] = area_exact
 
-			newRow["sum"]= sumCO
-			newRow["area_exact"]= area_exact
+			newRow["x_cen"], newRow["y_cen"], newRow["v_cen"] = wcsCloud.wcs_pix2world(Lcen, Bcen, Vcen, 0)
+			newRow["v_cen"] = newRow["v_cen"] / 1000.
+			dv = headCluster["CDELT3"] / 1000.  # km/s
 
-			newRow["x_cen"],  newRow["y_cen"], newRow["v_cen"]= wcsCloud.wcs_pix2world( Lcen, Bcen,Vcen ,0)
-			newRow["v_cen"]= newRow["v_cen"]/1000.
-			dv=headCluster["CDELT3"]/1000. #km/s
+			dl = abs(headCluster["CDELT1"])  # deg
 
-			dl= abs( headCluster["CDELT1"] ) #deg
+			newRow["v_rms"] = Vrms * dv
 
-			newRow["v_rms"] = Vrms*dv
+			newRow["l_rms"] = Lrms * dl
+			newRow["b_rms"] = Brms * dl
 
-			newRow["l_rms"] = Lrms*dl
-			newRow["b_rms"] = Brms*dl
+			# _, Nchan=np.unique( cloudV, return_counts=True)
 
-			#_, Nchan=np.unique( cloudV, return_counts=True)
-
-			#newRow["Nchannel"] =    np.max(P3Value)# if there is a three consecutive spectra in the cloud
-			newRow["allChannel"] =   len( diffVs )
-
-
+			# newRow["Nchannel"] =    np.max(P3Value)# if there is a three consecutive spectra in the cloud
+			newRow["allChannel"] = len(diffVs)
 
 			catTB.add_row(newRow)
 
 			zeroProjection[projectIndex] = 0
-			zeroProjectionExtend[ 0:-1,0:-1 ]=zeroProjection
+			zeroProjectionExtend[0:-1, 0:-1] = zeroProjection
 
 			pbar.update(i)
 
-
-
 		pbar.finish()
-		#save the clouds
+		# save the clouds
 
-		#fits.writeto(self.regionName+"NewCloud.fits", dataClusterNew,header=headCluster,overwrite=True   )
-		catTB.write( saveName ,overwrite=True)
+		# fits.writeto(self.regionName+"NewCloud.fits", dataClusterNew,header=headCluster,overwrite=True   )
+		catTB.write(saveName, overwrite=True)
 
 		return saveName
 

@@ -136,7 +136,9 @@ class allDBSCAN:
 
         return self.clrs[minPts-3]
 
+    def setfastDBSCANrms(self,inputRMS):
 
+        doDBSCAN.rms=inputRMS
 
     def  DBSCANTest(self, rawCOFITS, saveTag ,connecttivity=2,minValue=2,minPix=8,MinPts=8,minDelta=0,minAreaPix=0):
         """

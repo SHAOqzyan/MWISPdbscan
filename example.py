@@ -13,7 +13,7 @@ if 1: # Q1subfits test
     if 1:#simple test
 
         rawFITS="Q1Sub.fits" #input raw coFITS
-        saveTag="Q1SubTest" #your project code
+        saveTag="Q1Subtest" #your project code
 
 
     if 0:#Q2Per
@@ -40,8 +40,8 @@ if 1: # Q1subfits test
         outputFITS= doAllDBSCAN.fitsPath+saveTag+"dbscanS{}P{}Con{}.fits".format(cutoff,minPts,contype)
         outputTable= doAllDBSCAN.fitsPath+saveTag+"dbscanS{}P{}Con{}.fit".format(cutoff,minPts,contype)
 
-    doAllDBSCAN.getMaskByLabel(  outputFITS  , outputTable, onlyClean=True )
+    doAllDBSCAN.getMaskByLabel(  outputFITS  , outputTable, onlyClean=True, removeEdge=False )
 
-    TB=doAllDBSCAN.getMaskByLabel( outputFITS ,  outputTable , onlySelect=True ) #only Select=True, meas we only want to select the catlaog
+    TB=doAllDBSCAN.getMaskByLabel( outputFITS ,  outputTable , onlySelect=True,removeEdge=False   ) #only Select=True, meas we only want to select the catlaog
     TB.write(doAllDBSCAN.fitsPath+saveTag+"dbscanS{}P{}Con{}_clean.fit".format(cutoff,minPts,contype), overwrite=True)
 

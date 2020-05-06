@@ -10,7 +10,13 @@ if 1: # Q1subfits test
     #rawFITS="/home/qzyan/WORK/dataDisk/MWISP/G120/100_150_U.fits" #input raw coFITS
     #saveTag = "Q2test"  # your project code
 
-    if 1:#Q2Per
+    if 1:#simple test
+
+        rawFITS="Q1Sub.fits" #input raw coFITS
+        saveTag="Q1SubTest" #your project code
+
+
+    if 0:#Q2Per
         rawFITS="/sci/yansun/100_150/100_150_U_per.fits" #input raw coFITS
         saveTag="Q2Per" #your project code
 

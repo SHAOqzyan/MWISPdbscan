@@ -199,12 +199,7 @@ class allDBSCAN:
             os.remove(dbscanLabelFITS)
 
 
-
-
-
-
-
-
+        return  dbscanLabelFITS,  rawDBSCANTBFile
 
     def selectTBByCode(self,cutOff,rawTB,selectionCode):
         """

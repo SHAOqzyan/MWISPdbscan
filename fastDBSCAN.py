@@ -380,7 +380,7 @@ class myDBSCAN(object):
 
 			self.getCatFromLabelArray(COFITS,saveLabel,self.TBModel,saveMarker=saveMarker,  minPix=min_pix,rms= min_sigma  )
 
-	def getCatFromLabelArray(self, CO12FITS, labelFITS, TBModel, minPix=8, rms=2, saveMarker="", peakSigma=3, region="",
+	def getCatFromLabelArray(self, CO12FITS, labelFITS, TBModel, minPix=8, rms=2, saveMarker="",  region="", minPixN=8, minChannelN=3, peakSigma=5, has22=True,
 							 pureDBSCAN=False):
 		"""
 		Extract catalog from label fits, the minPix and rms is only used for saving
@@ -389,16 +389,21 @@ class myDBSCAN(object):
 		:return:
 		"""
 
+ 
+
+
 		print "The rms is ", self.rms
 
 		# do not make any selection here, because of the closeness of many clouds, some cloud may have pixels less than 8, we should keep them
 		# they are usefull to mask edge sources..., and to clean fits
 
-		if saveMarker == "":
+		if saveMarker == "" :
 			saveName = region + "DBSCAN{}_P{}Cat.fit".format(rms, minPix)
 
 		else:
 			saveName = saveMarker + ".fit"
+
+		#
 
 		clusterTBOld = Table.read(TBModel)
 
@@ -460,7 +465,7 @@ class myDBSCAN(object):
 		ids, count = np.unique(clusterValue1D, return_counts=True)
 		GoodIDs = ids
 		GoodCount = count
-		print "Total number of turnks? ", len(GoodIDs)
+		print "Total number of raw turnks?", len(GoodIDs)
 		# print "Total number of Good Trunks? ",len(GoodIDs)
 
 		# dataCO,headCO=doFITS.readFITS( CO12FITS )
@@ -472,13 +477,14 @@ class myDBSCAN(object):
 
 		# zeroP
 		# remove any cloud with voxels less than minPix
-		selectCondictio = GoodCount >= 16  #
+		selectCondictio = GoodCount >= minPixN  #
 		GoodCount = GoodCount[selectCondictio]
 		GoodIDs = GoodIDs[selectCondictio]
+		print len(GoodIDs), " clouds has at least {} voxels.".format(minPixN)
 
 		pbar = ProgressBar(widgets=widgets, maxval=len(GoodIDs))
 		pbar.start()
-		print len(GoodIDs), "left after First selection"
+
 		for i in range(len(GoodIDs)):
 
 			# i would be the newID
@@ -505,13 +511,13 @@ class myDBSCAN(object):
 			###############
 			diffVs = np.unique(cloudV)
 
-			if len(diffVs) < 3:  # reject all cloud that has channels less than 3 channels
+			if len(diffVs) < minChannelN :  # reject all cloud that has channels less than 3 channels
 				continue
 
 			peak = np.max(coValues)
 			################################################
-			# remve all clouds less than 3 sigma
-			if peak < 3 * self.rms:
+			# remve all clouds less than 4  sigma
+			if peak < peakSigma * self.rms: #
 				continue
 
 			peakIndex = coValues.argmax()
@@ -525,6 +531,22 @@ class myDBSCAN(object):
 			projectIndex = tuple([cloudB, cloudL])
 
 			zeroProjection[projectIndex] = 1
+			zeroProjectionExtend[0:-1, 0:-1] = zeroProjection
+			sum22 = zeroProjectionExtend[0:-1, 0:-1] + zeroProjectionExtend[0:-1, 1:] + zeroProjectionExtend[1:,
+																						0:-1] + zeroProjectionExtend[1:,
+																								1:]
+
+			# if any pixel>4:
+			testHas22=  4 in sum22
+			if testHas22:
+				newRow["has22"] = 1
+			else:
+				#continue #reject this cloud
+				newRow["has22"] = 0
+
+			if has22 and not testHas22: #require has22, and not has 22
+				continue
+
 
 			# calculate the accurate
 
@@ -536,7 +558,8 @@ class myDBSCAN(object):
 
 			newRow["area_accurate"] = area_accurate
 
-			zeroProjectionExtend[0:-1, 0:-1] = zeroProjection
+
+
 
 			sumCO = np.sum(coValues)
 
@@ -553,16 +576,7 @@ class myDBSCAN(object):
 			# print area_exact,area_accurate
 			# find the 2*2 patter
 
-			sum22 = zeroProjectionExtend[0:-1, 0:-1] + zeroProjectionExtend[0:-1, 1:] + zeroProjectionExtend[1:,
-																						0:-1] + zeroProjectionExtend[1:,
-																								1:]
 
-			# if any pixel>4:
-
-			if 4 in sum22:
-				newRow["has22"] = 1
-			else:
-				newRow["has22"] = 0
 
 			# dataClusterNew[cloudIndex] =newID
 

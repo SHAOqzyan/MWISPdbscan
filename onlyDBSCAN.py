@@ -152,7 +152,7 @@ class allDBSCAN:
         doDBSCAN.DBSCANAllInOne(rawCOFITS, saveTag, rmsFITS=None, minDelta=minDelta, minValue=minValue, minPix=minPix, minAreaPix=minAreaPix,  MinPts=MinPts, sigma=self.rmsCO12,  connectivity=connecttivity, outPath= self.outPath )
 
 
-    def pureDBSCAN(self, FITSfile, minValue, MinPts=3, saveTag="",  connectivity=2,inputRMS=None ,redo=True ,keepFITSFile=True, onlyGetFITS=False ):
+    def pureDBSCAN(self, FITSfile, minValue, MinPts=3, saveTag="",  connectivity=2,inputRMS=None ,redo=True ,keepFITSFile=True, onlyGetFITS=False,minChannelN=3, peakSigma=5,minPixN=16,has22=True  ):
         """
         #
         :param FITSfile:
@@ -163,6 +163,12 @@ class allDBSCAN:
         :param inputRMS:
         :return:
         """
+
+        #minChannelN = 3  #
+        #peakSigma = 5  #
+        #minPixN = 16
+        #has22 = True  # false
+
 
         dataCO,headCO = myFITS.readFITS( FITSfile )
 
@@ -186,7 +192,7 @@ class allDBSCAN:
 
         print "Step 2: computing DBSCAN table......"
 
-        rawDBSCANTBFile = doDBSCAN.getCatFromLabelArray(FITSfile, dbscanLabelFITS, doDBSCAN.TBModel,  saveMarker= saveMarker )
+        rawDBSCANTBFile = doDBSCAN.getCatFromLabelArray(FITSfile, dbscanLabelFITS, doDBSCAN.TBModel,  saveMarker= saveMarker , has22=has22,peakSigma=peakSigma,minChannelN=minChannelN,minPixN=minPixN )
 
 
         if not keepFITSFile:
@@ -1899,13 +1905,21 @@ class allDBSCAN:
 
 
 
-    def getMaskByLabel(self,FITSfile, tbFile , onlyClean=False ,onlySelect=False,inputCutOff=None,reProduceFITS=True,removeEdge=True,minDelta=3):
+    def getMaskByLabel(self,FITSfile, tbFile , onlyClean=False ,onlySelect=False,inputCutOff=None,reProduceFITS=True,removeEdge=True,minDelta=3, minChannelN=3,  minPixN=8, has22=True  ):
         """
 
         :param FITSfile:
         :param tbFile:
         :return:
         """
+
+
+        #minChannelN = 3  # minimum number of velocity channels
+        #peakSigma = 5  # minimum peak in sigma unit
+        #minPixN = 8  # minimum peak in sigma
+        #has22 = True  # false
+
+
 
         rawTB=Table.read(tbFile)
 
@@ -1919,7 +1933,9 @@ class allDBSCAN:
 
         #the parameters are final
 
-        filterTB=self.selectTBFormal(rawTB,cutOff=cutOff, pixN=16,minDelta=minDelta,hasBeam=True,minChannel=3 ,removeEdge=removeEdge)
+
+
+        filterTB=self.selectTBFormal(rawTB,cutOff=cutOff, pixN=minPixN,minDelta=minDelta,hasBeam=has22,minChannel=minChannelN ,removeEdge=removeEdge)
 
         if onlySelect:
             #saveFITS

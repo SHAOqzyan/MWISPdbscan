@@ -20,6 +20,8 @@ import os
 from spectral_cube import SpectralCube
 from  myGAIA import GAIADIS
 
+#from powerLawComponent1 import powerLaw1
+#doPowerLaw=powerLaw1()
 doFITS=myFITS()
 
 gaiaDis=GAIADIS()
@@ -32,14 +34,14 @@ class allDBSCAN:
 
     #
 
-    rootPath="./"
+    rootPath="./newDBSCAN/"
 
     emptyFITS = "G2650LocalEmpty.fits"
     rmsCO12=0.5 # K
 
-    #tmpPath= rootPath+"tmpOUT/"  #"./DBSCANTest/"
-    tmpPath="./tmpFiles/"
-    testAllPath =tmpPath  # rootPath+"testAll/"
+    tmpPath= rootPath+"tmpOUT/"  #"./DBSCANTest/"
+
+    testAllPath =  rootPath+"testAll/"
 
     con1PtsAll= np.arange(3,8,1)
     con2PtsAll= np.arange(3,20,1)
@@ -87,13 +89,14 @@ class allDBSCAN:
     con3Str = "Connectivity 3"
 
 
-    #fitsPath="/home/qzyan/WORK/myDownloads/MWISPcloud/newDBSCAN/testAll/"
-
-    fitsPath="./DBSCANresults/"
+    fitsPath="/home/qzyan/WORK/myDownloads/MWISPcloud/newDBSCAN/testAll/"
 
 
+    tmpPath="/home/qzyan/WORK/myDownloads/MWISPcloud/tmpFiles/"
 
     saveTag = "G2650Local"
+
+    saveAlphaPath="/home/qzyan/WORK/myDownloads/MWISPcloud/saveAlphaData/"
 
 
     selectFormalCode = "selectFormal"
@@ -110,12 +113,6 @@ class allDBSCAN:
     def __init__(self):
         pass
 
-        if not os.path.isdir(self.fitsPath):
-            os.system("mkdir "+self.fitsPath)
-
-        if not os.path.isdir(self.tmpPath):
-            os.system("mkdir "+self.tmpPath)
-
 
     def getMiddleMinPts(self, minPtList ):
         """
@@ -131,14 +128,15 @@ class allDBSCAN:
 
         return int(round( midV) )
 
+    def setfastDBSCANrms(self,inputRMS):
+
+        doDBSCAN.rms=inputRMS
 
     def getColorByMinPts(self,minPts):
 
         return self.clrs[minPts-3]
 
-    def setfastDBSCANrms(self,inputRMS):
 
-        doDBSCAN.rms=inputRMS
 
     def  DBSCANTest(self, rawCOFITS, saveTag ,connecttivity=2,minValue=2,minPix=8,MinPts=8,minDelta=0,minAreaPix=0):
         """
@@ -152,7 +150,7 @@ class allDBSCAN:
         doDBSCAN.DBSCANAllInOne(rawCOFITS, saveTag, rmsFITS=None, minDelta=minDelta, minValue=minValue, minPix=minPix, minAreaPix=minAreaPix,  MinPts=MinPts, sigma=self.rmsCO12,  connectivity=connecttivity, outPath= self.outPath )
 
 
-    def pureDBSCAN(self, FITSfile, minValue, MinPts=3, saveTag="",  connectivity=2,inputRMS=None ,redo=True ,keepFITSFile=True, onlyGetFITS=False,minChannelN=3, peakSigma=5,minPixN=16,has22=True  ):
+    def pureDBSCAN(self, FITSfile, minValue, MinPts=3, saveTag="",  connectivity=2,inputRMS=None ,redo=True ,keepFITSFile=True, onlyGetFITS=False,rmsFITS=None ):
         """
         #
         :param FITSfile:
@@ -164,10 +162,6 @@ class allDBSCAN:
         :return:
         """
 
-        #minChannelN = 3  #
-        #peakSigma = 5  #
-        #minPixN = 16
-        #has22 = True  # false
 
 
         dataCO,headCO = myFITS.readFITS( FITSfile )
@@ -182,7 +176,7 @@ class allDBSCAN:
         # step 1 compute DBSCAN
         print "Step 1: computing DBSCAN......"
 
-        dbscanLabelFITS = doDBSCAN.computeDBSCAN(dataCO, headCO, min_sigma=minValue, min_pix=MinPts,   connectivity=connectivity, region=self.fitsPath + saveTag, rmsFITS=None,     inputRMS=inputRMS)
+        dbscanLabelFITS = doDBSCAN.computeDBSCAN(dataCO, headCO, min_sigma=minValue, min_pix=MinPts,   connectivity=connectivity, region=self.testAllPath + saveTag, rmsFITS=rmsFITS,     inputRMS=inputRMS)
 
         if onlyGetFITS:
             return dbscanLabelFITS
@@ -191,15 +185,22 @@ class allDBSCAN:
         saveMarker= dbscanLabelFITS[:-5]
 
         print "Step 2: computing DBSCAN table......"
+        print dbscanLabelFITS
 
-        rawDBSCANTBFile = doDBSCAN.getCatFromLabelArray(FITSfile, dbscanLabelFITS, doDBSCAN.TBModel,  saveMarker= saveMarker , has22=has22,peakSigma=peakSigma,minChannelN=minChannelN,minPixN=minPixN )
+
+        rawDBSCANTBFile = doDBSCAN.getCatFromLabelArray(FITSfile, dbscanLabelFITS, doDBSCAN.TBModel,  saveMarker= saveMarker )
 
 
         if not keepFITSFile:
             os.remove(dbscanLabelFITS)
 
 
-        return  dbscanLabelFITS,  rawDBSCANTBFile
+        return dbscanLabelFITS, rawDBSCANTBFile
+
+
+
+
+
 
     def selectTBByCode(self,cutOff,rawTB,selectionCode):
         """
@@ -1038,6 +1039,11 @@ class allDBSCAN:
 
             drawTB = tbList[0]
             massSigma2= doDBSCAN.getMass(drawTB)
+
+
+
+
+
             binN, binEdges =  np.histogram( massSigma2 , bins=areaEdges)
 
             ## calculate the alpha, is it 2.35?
@@ -1078,11 +1084,11 @@ class allDBSCAN:
 
         axList = [axCon1, axCon2, axCon3]
 
-        self.PerFormAllSingleG2650(axCon1, self.plotMassAlphaSingle, 1)
+        self.PerFormAllSingleG2650(axCon1, self.plotMassAlphaSingle, 1,plotAll=True)
 
-        self.PerFormAllSingleG2650(axCon2, self.plotMassAlphaSingle, 2)
+        self.PerFormAllSingleG2650(axCon2, self.plotMassAlphaSingle, 2,plotAll=True)
 
-        self.PerFormAllSingleG2650(axCon3, self.plotMassAlphaSingle, 3)
+        self.PerFormAllSingleG2650(axCon3, self.plotMassAlphaSingle, 3,plotAll=True)
         self.plotMassAlphaSingle(axCon4,1,1,plotSCIMES=True)
         axCon1.set_ylabel(r"$\alpha$ (mass)")
 
@@ -1094,12 +1100,14 @@ class allDBSCAN:
 
         #################
 
-        self.labelContype(axList)
-        self.labelSCIMES(axCon4)
+        self.labelContype(axList,locSet=4)
+        self.labelSCIMES(axCon4,locSet=4)
         self.drawColorBar(axCon3)
 
-        #self.drawHorizontalLine(axList, self.averageFluxAlpha ) #1.97+/0.06
-        #self.drawHorizontalLine([axCon4], self.averageFluxAlpha ) #1.97+/0.06
+        averageAlpha,averageAlphaError=self.getAveragePhysicalAlphaAndError(calcode="mass")
+
+        self.drawHorizontalLine(axList,  averageAlpha  ) #1.97+/0.06
+        self.drawHorizontalLine([axCon4], averageAlpha  ) #1.97+/0.06
 
         self.setCutoffTicks(axList+[axCon4])
 
@@ -1131,7 +1139,12 @@ class allDBSCAN:
 
         #get tb list
         #tbList = self.getTBByCutOffList(self.cutoffList,minPts,conType)
-        alphaMass, alphaMassError,completeMass= doDBSCAN.getMassAlphaList(tbList, self.cutoffList)
+
+        if plotSCIMES:
+            alphaMass, alphaMassError,completeMass=  self.getMassAlphaErrorListSCIMES()  #doDBSCAN.getMassAlphaList(tbList, self.cutoffList)
+
+        else:
+            alphaMass, alphaMassError,completeMass=  self.getMassAlphaErrorList(minPts,conType)  #doDBSCAN.getMassAlphaList(tbList, self.cutoffList)
 
         ebDBSCAN = ax.errorbar(self.cutoffInKelvin , alphaMass , yerr=alphaMassError , c=  plotColor , marker='^', linestyle="-",    capsize=3, elinewidth=1.0, lw=1,   markerfacecolor='none')
 
@@ -1607,23 +1620,23 @@ class allDBSCAN:
         plt.savefig("compareParaFlux.png", bbox_inches='tight', dpi=300)
 
 
-    def labelContype(self,axList):
+    def labelContype(self,axList,locSet=1):
 
         axCon1,axCon2,axCon3=axList
 
 
-        at1 = AnchoredText(self.con1Str, loc=1, frameon=False)
+        at1 = AnchoredText(self.con1Str, loc=locSet, frameon=False)
         axCon1.add_artist(at1)
 
-        at2 = AnchoredText(self.con2Str, loc=1, frameon=False)
+        at2 = AnchoredText(self.con2Str, loc=locSet, frameon=False)
         axCon2.add_artist(at2)
 
-        at3 = AnchoredText(self.con3Str, loc=1, frameon=False)
+        at3 = AnchoredText(self.con3Str, loc=locSet, frameon=False)
         axCon3.add_artist(at3)
 
-    def labelSCIMES(self,ax):
+    def labelSCIMES(self,ax,locSet=1):
 
-        at = AnchoredText(self.SCIMESStr, loc=1, frameon=False)
+        at = AnchoredText(self.SCIMESStr, loc=locSet, frameon=False)
         ax.add_artist(at)
 
 
@@ -1640,16 +1653,21 @@ class allDBSCAN:
 
     def drawCompleteMass(self,axList):
 
-        completeFluxCut2 = 144 * self.rmsCO12 * 0.2 * self.cutoffList[0] * 3  # K km/s, the last 3  is the two channels
+        #completeFluxCut2 = 144 * self.rmsCO12 * 0.2 * self.cutoffList[0] * 3  # K km/s, the last 3  is the two channels
+        completeFluxCut2 = 16 * self.rmsCO12 * self.cutoffList[0]*0.2     # K km/s, the last 3  is the two channels
 
         completeMassCut2 = doDBSCAN.calmassByXfactor(completeFluxCut2,1500)
 
-        completeFluxCut7 = 144 * self.rmsCO12 * 0.2 * self.cutoffList[-1] * 3  # K km/s, the last 3  is the two channels
+        #completeFluxCut7 = 144 * self.rmsCO12 * 0.2 * self.cutoffList[-1] * 3  # K km/s, the last 3  is the two channels
+        completeFluxCut7 = 16 * self.rmsCO12 * self.cutoffList[-1]*0.2    # K km/s, the last 3  is the two channels
+
+        
+        
         completeMassCut7 = doDBSCAN.calmassByXfactor(completeFluxCut7,1500)
 
         for eachAx in axList:
-            eachAx.plot([completeMassCut2, completeMassCut2], [1, 1000], '-', lw=1, alpha=0.5, color='k')
-            eachAx.plot([completeMassCut7, completeMassCut7], [1, 1000], '--', lw=1, alpha=0.5, color='k')
+            eachAx.plot([completeMassCut2, completeMassCut2], [1, 10000], '-', lw=1, alpha=0.5, color='k')
+            eachAx.plot([completeMassCut7, completeMassCut7], [1, 10000], '--', lw=1, alpha=0.5, color='k')
 
 
 
@@ -1898,23 +1916,33 @@ class allDBSCAN:
         return saveTag
 
 
+    def fillingFactorEdge(self,processTB):
+        """
+        select edges for filling factor data
+        :param rawTB:
+        :return:
+        """
+
+        #remove edges clouds cente
+
+        #
+        select1=  np.logical_or(processTB["y_cen"] >=4.25, processTB["y_cen"] <= 3.75)
+
+        select2= processTB["x_cen"]>=26.25
+
+        finalSelect = np.logical_or(select1,select2)
+
+        return processTB[ finalSelect ]
 
 
-    def getMaskByLabel(self,FITSfile, tbFile , onlyClean=False ,onlySelect=False,inputCutOff=None,reProduceFITS=True,removeEdge=True,minDelta=3, minChannelN=3,  minPixN=8, has22=True  ):
+
+    def getMaskByLabel(self,FITSfile, tbFile , onlyClean=False ,onlySelect=False,inputCutOff=None,reProduceFITS=True,removeEdge=True,minDelta=3,workPaper=""):
         """
 
         :param FITSfile:
         :param tbFile:
         :return:
         """
-
-
-        #minChannelN = 3  # minimum number of velocity channels
-        #peakSigma = 5  # minimum peak in sigma unit
-        #minPixN = 8  # minimum peak in sigma
-        #has22 = True  # false
-
-
 
         rawTB=Table.read(tbFile)
 
@@ -1927,10 +1955,12 @@ class allDBSCAN:
             cutOff=inputCutOff
 
         #the parameters are final
+        if workPaper=="FF":
+            filterTB=self.selectTBFormal(rawTB,cutOff=cutOff, pixN=16,minDelta=minDelta,hasBeam=True,minChannel=3 ,removeEdge=False)
+            filterTB=self.fillingFactorEdge( filterTB ) #since the data
 
-
-
-        filterTB=self.selectTBFormal(rawTB,cutOff=cutOff, pixN=minPixN,minDelta=minDelta,hasBeam=has22,minChannel=minChannelN ,removeEdge=removeEdge)
+        else:
+            filterTB=self.selectTBFormal(rawTB,cutOff=cutOff, pixN=16,minDelta=minDelta,hasBeam=True,minChannel=3 ,removeEdge=removeEdge)
 
         if onlySelect:
             #saveFITS
@@ -1956,10 +1986,6 @@ class allDBSCAN:
         ############
 
 
-
-
-
-
         dataCluster, headCluster = myFITS.readFITS(FITSfile)
         cleanCluster = doDBSCAN.cleanLabelFITS(dataCluster, filterTB)
 
@@ -1967,9 +1993,9 @@ class allDBSCAN:
         fits.writeto(saveFITS, cleanCluster, headCluster, overwrite=True)
 
         if onlyClean:
-            print saveFITS
+
             print "Program existing due to the set of only cleaning..."
-            return
+            return saveFITS
 
 
 
@@ -1987,9 +2013,16 @@ class allDBSCAN:
 
 
 
-    def PerFormAllSingleG2650(self,ax,singleFunction,conType, plot3=False):
+    def PerFormAllSingleG2650(self,ax,singleFunction,conType, plot3=False,plotAll=False):
 
-
+        """
+        plot3 means plot all
+        :param ax:
+        :param singleFunction:
+        :param conType:
+        :param plot3:
+        :return:
+        """
         if plot3:
             if conType==1:
                 conList=self.con1G2650
@@ -2020,7 +2053,7 @@ class allDBSCAN:
                 conList=self.con3G2650
 
             for p in conList:
-                if p%2 == 0:
+                if p%2 == 0 and not plotAll:
                     continue
 
                 singleFunction(ax,p, conType)
@@ -2689,25 +2722,27 @@ class allDBSCAN:
 
         axList = [axCon1, axCon2, axCon3]
 
-        self.PerFormAllSingleG2650(axCon1, self.plotAreaAlphaPhysicalSingle, 1)
-        self.PerFormAllSingleG2650(axCon2, self.plotAreaAlphaPhysicalSingle, 2)
-        self.PerFormAllSingleG2650(axCon3, self.plotAreaAlphaPhysicalSingle, 3)
+        self.PerFormAllSingleG2650(axCon1, self.plotAreaAlphaPhysicalSingle, 1,  plotAll=True )
+        self.PerFormAllSingleG2650(axCon2, self.plotAreaAlphaPhysicalSingle, 2,  plotAll=True )
+        self.PerFormAllSingleG2650(axCon3, self.plotAreaAlphaPhysicalSingle, 3,  plotAll=True )
         self.plotAreaAlphaPhysicalSingle(axCon4, 1, 1, plotSCIMES=True)
 
-        axCon1.set_ylabel(r"$\alpha$ (angular area)")
+        axCon1.set_ylabel(r"$\alpha$ (physical area)")
 
         axCon1.set_xlabel(r"CO cutoff (K)")
         axCon2.set_xlabel(r"CO cutoff (K)")
         axCon3.set_xlabel(r"CO cutoff (K)")
         axCon4.set_xlabel(r"CO cutoff (K)")
 
-        #################
+        ####################
 
         self.labelContype(axList)
         self.labelSCIMES(axCon4)
         self.drawColorBar(axCon3)
-        self.drawHorizontalLine(axList, 1.97)  # 1.97+/0.06
-        self.drawHorizontalLine([axCon4], 1.97)  # 1.97+/0.06
+
+        averageAlpha,averageAlphaError=self.getAveragePhysicalAlphaAndError()
+        self.drawHorizontalLine(axList, averageAlpha )  # 1.97+/0.06
+        self.drawHorizontalLine([axCon4], averageAlpha )  # 1.97+/0.06
         self.setCutoffTicks(axList+[axCon4])
 
         fig.tight_layout()
@@ -2913,10 +2948,57 @@ class allDBSCAN:
         ########################################################
 
 
-        alphaArea, alphaAreaError = self.getPhysicalAlphaList(tbList)
+        if plotSCIMES:
+            #######
+            alphaArea, alphaAreaError = self.getPhysicalAreaAlphaErrorListSCIMES( )
+
+        else:
+            
+            alphaArea, alphaAreaError = self.getPhysicalAreaAlphaErrorList(minPts,conType=conType )
+
+            #######
+            #alphaArea, alphaAreaError = self.getPhysicalAlphaList(tbList)
+
+        saveTagAlpha="./savePhysicalArea/PhysicalAreaMinPts{}Con{}".format( minPts, conType)
+        saveTagAlphaError="./savePhysicalArea/PhysicalAreaErrorMinPts{}Con{}".format( minPts, conType)
+
+        np.save(saveTagAlpha, alphaArea  )
+        np.save(saveTagAlphaError, alphaAreaError  )
+
         ebDBSCAN = ax.errorbar(self.cutoffInKelvin , alphaArea , yerr=alphaAreaError , c= plotColor  , marker='^', linestyle="-",    capsize=3, elinewidth=1.0, lw=1,   markerfacecolor='none')
         ebDBSCAN[-1][0].set_linestyle(':')
 
+    def getPhysicalAreaAndError(self,TB):
+        """
+
+        :param TB:
+        :return:
+        """
+
+        # print TB.colnames
+
+        processTB=TB.copy()
+        v = processTB["v_cen"]
+        dis = (0.033 * v + 0.180) * 1000  # pc
+        processTB["fakeDistance"] =     dis
+
+        # dis= ( 0.033*v + 0.175)*1000 # pc
+        #
+
+        selectionCriteria= np.logical_and(dis>0, dis<=1500   )
+
+        goodClouds= processTB[selectionCriteria] ###
+
+        NArray = goodClouds["area_exact"] / 0.25
+
+        # print N,eachR["pixN"]
+        length = goodClouds["fakeDistance"] * np.deg2rad(0.5 / 60)  # square pc
+        physicalArea = length ** 2 * NArray # eachR["pixN"]  #*10000
+
+        dError=161 #pc
+        physicalAreaError=2* goodClouds["fakeDistance"]*dError*(np.deg2rad(0.5 / 60) )**2*NArray
+
+        return physicalArea,physicalAreaError
 
 
     def getPhysicalAlphaList(self,TBList):
@@ -2937,12 +3019,18 @@ class allDBSCAN:
         compoleteAreaPhysical =  length**2 * 4   #4 pixels
 
         for eachTB in TBList:
-            realArea = doDBSCAN.getRealArea(eachTB)
+            #realArea = doDBSCAN.getRealArea(eachTB)
+
+
+            phyiscalArea,physicalAreaError=self.getPhyscialAreaAndError(eachTB)
+
+ 
            # binN, binEdges = np.histogram(realArea, bins=physicalEdges)
 
             # calculate alpha
 
-            meanA, stdA = doDBSCAN.getAlphaWithMCMC(realArea, minArea=compoleteAreaPhysical, maxArea=None, physicalArea=True)
+            #meanA, stdA = doDBSCAN.getAlphaWithMCMC(realArea, minArea=compoleteAreaPhysical, maxArea=None, physicalArea=True)
+            meanA, stdA = doPowerLaw.getAlphaWithMCMCWithErrorMultiChains(phyiscalArea, physicalAreaError,  minArea=compoleteAreaPhysical, maxArea=np.max(phyiscalArea) )
 
             alphaList.append( meanA )
 
@@ -3602,7 +3690,7 @@ class allDBSCAN:
 
         axList=[ax2, ax3 ]
 
-        markStr=[ "HDBSCAN (3$\sigma$ cutoff)" , r"DBSCAN (3$\sigma$ cutoff, MinPts=4, connectivity=1)"  ]
+        markStr=[ "HDBSCAN (3$\sigma$ cutoff)" , r"DBSCAN (3$\sigma$ cutoff, MinPts 4, connectivity 1)"  ]
 
         for i in range( len(axList) ):
 
@@ -4253,6 +4341,416 @@ class allDBSCAN:
         plt.savefig("numberDensityLB.png", bbox_inches='tight',dpi=300)
 
 
+    def getMaskedIntFITS(self):
+        """
+        produce two intgrate fits, the first is the the fits with clodu masked the second is the fits with only the largest cloud
+        :return:
+        """
+        rawCOFITS = self.G2650Local
+
+        maskedLabelFITS =  "/home/qzyan/WORK/myDownloads/MWISPcloud/newDBSCAN/testAll/G2650LocaldbscanS2P4Con1_Clean.fits"
+        maskedLabelTB= "/home/qzyan/WORK/myDownloads/MWISPcloud/newDBSCAN/testAll/G2650LocaldbscanS2P4Con1_CleanWithLW.fit"
+
+
+        tb=Table.read(maskedLabelTB)
+        print len(tb)
+
+        goodTB= self.selectTBByCode(2,tb,self.selectFormalCode)
+
+        goodTB.sort("area_exact")
+
+        largestID = goodTB[-1]["_idx"]
+
+        print "The largest cloud is ", largestID
+
+
+        saveNameAll="DBSCANMask_"+ os.path.basename(maskedLabelFITS)
+
+        saveNameLargeset="DBSCANMask_LargestMC_"+ os.path.basename(maskedLabelFITS)
+
+
+        rawCOData,rawCOHead=doFITS.readFITS(rawCOFITS)
+        labelData,labelHead=doFITS.readFITS(maskedLabelFITS)
+
+
+        minV=np.min(labelData[3])
+        rawCOData[labelData==minV]=0
+
+        intDataAll = np.sum(rawCOData,axis=0)*0.2
+        #########################
+        rawCOData[labelData!=largestID]=0
+        intDataLargest = np.sum(rawCOData,axis=0)*0.2
+
+        fits.writeto(saveNameAll,intDataAll,header=rawCOHead,overwrite=True)
+        fits.writeto(saveNameLargeset,intDataLargest,header=labelHead,overwrite=True)
+
+
+
+
+    def drawOverallMomentCloudMask(self, fitsFile="DBSCANMask_G2650LocaldbscanS2P4Con1_Clean.fits",saveTag="cloudMaskAll"):
+        """
+        draw a simple map for over all moment of local molecular clouds
+        :return:
+        """
+
+        #self.getMaskedIntFITS() #only need to do once
+
+
+
+
+        # what is the unit of this integrated intensity?
+        import matplotlib
+        from mpl_toolkits.axes_grid1.axes_grid import ImageGrid
+        from mpl_toolkits.axes_grid1.axes_grid import AxesGrid
+        from matplotlib.colors import LogNorm
+
+        dataCO, headCO = myFITS.readFITS(fitsFile)
+
+        wcsCO = WCS(headCO)
+
+        fig = plt.figure(1, figsize=(16, 7.8))
+        rc('font', **{'family': 'sans-serif', 'serif': ['Helvetica'], 'size': 20})
+        # rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+
+        rc('text', usetex=True)
+        mpl.rcParams['text.latex.preamble'] = [
+            r'\usepackage{tgheros}',  # helvetica font
+            r'\usepackage{sansmath}',  # math-font matching  helvetica
+            r'\sansmath'  # actually tell tex to use it!
+            r'\usepackage{siunitx}',  # micro symbols
+            r'\sisetup{detect-all}',  # force siunitx to use the fonts
+        ]
+        # grid helper
+        grid_helper = pywcsgrid2.GridHelper(wcs=wcsCO)
+
+        # AxesGrid to display tow images side-by-side
+        fig = plt.figure(1, (6, 3.5))
+
+        grid = ImageGrid(fig, (1, 1, 1), nrows_ncols=(1, 1),
+                         cbar_mode="single", cbar_pad="0.3%",
+                         cbar_location="right", cbar_size="1%",
+                         axes_class=(pywcsgrid2.Axes, dict(header=wcsCO)))
+
+        main_axes = grid[0]
+        main_axes.locator_params(nbins=10)
+        cb_axes = grid.cbar_axes[0]  # colorbar axes
+
+        a = np.log(dataCO)
+
+        a = a[a > 0]
+        print np.min(a), np.max(a), "minimum and maxinum after "
+
+        # im = main_axes.imshow(np.sqrt(dataCO),origin='lower',cmap="jet",  vmin=np.sqrt(1.9*1.5), vmax= np.sqrt( 81) , interpolation='none')
+
+        # im = main_axes.imshow( dataCO ,origin='lower',cmap="jet",  vmin=-10, vmax= 80 , interpolation='none')
+
+        # im = main_axes.imshow(np.log(dataCO),origin='lower',cmap="jet",   interpolation='none')
+
+        # im = main_axes.imshow( np.log(dataCO) ,origin='lower',cmap="jet",  vmin=np.log(1.9*2.5), vmax= np.log( 110) , interpolation='none')
+        im = main_axes.imshow(np.log(dataCO), origin='lower', cmap="bone", vmin=np.log(1.9 * 2.5), vmax=np.log(110),
+                              interpolation='none')
+
+        main_axes.set_facecolor("black")
+
+        # main_axes.set_facecolor('silver')
+        # main_axes.axis[:].major_ticks.set_color("purple")
+        main_axes.axis[:].major_ticks.set_color("white")  # for kepu
+
+        cb = cb_axes.colorbar(im)
+        # cb_axes.axis["right"].toggle(ticklabels=True)
+        cb_axes.set_ylabel(r"K km s$^{-1}$")
+        cb_axes.set_xlabel("")
+
+        # print dir(cb_axes.axes)
+
+        # tickesArray=np.asarray( [0,0.1,0.5,1,2,3,4,5] )
+        tickesArray = np.asarray([5, 10, 20, 40, 80])
+        # tickesArray=tickesArray**2
+        cb.ax.set_yticks(np.log(tickesArray))
+        cb.ax.set_yticklabels(map(str, tickesArray))
+
+        # cbar.ax.set_xticksset_xticklabels(['Low', 'Medium', 'High'])
+
+        # add well-known star forming regions
+
+        # W40 LBN 028.77+03.43
+        fontAlpha = 1
+        fontSize = 15
+        fontColor = "white"
+        lw = 1.2
+        import matplotlib.patheffects as path_effects
+        # W40
+        # main_axes["gal"].text(28.77, 03.43, r"\textbf{W40}",  color='white', alpha=fontAlpha,fontsize=fontSize ,horizontalalignment='center',   verticalalignment='center' )
+        # main_axes["gal"].text(28.77, 03.43, "W40",  color=fontColor, alpha=fontAlpha,fontsize=fontSize ,horizontalalignment='center',   verticalalignment='center' )
+        text = main_axes["gal"].text(28.77, 03.43, "W40", color=fontColor, alpha=fontAlpha, fontsize=fontSize,
+                                     horizontalalignment='center', verticalalignment='center')
+        text.set_path_effects([path_effects.Stroke(linewidth=lw, foreground="black"), path_effects.Normal()])
+
+        # W49  G043.2+0.01  W49 2013ApJ...775...79Z
+        text = main_axes["gal"].text(43.2, 0.01, "W49", color=fontColor, alpha=fontAlpha, fontsize=fontSize,
+                                     horizontalalignment='center', verticalalignment='center')
+        text.set_path_effects([path_effects.Stroke(linewidth=lw, foreground="black"), path_effects.Normal()])
+
+        ##G032.79+00.19(H)
+        # main_axes["gal"].text(32.79,   0.19 , "1",  color=fontColor, alpha=fontAlpha,fontsize=fontSize,horizontalalignment='center',   verticalalignment='center' )
+
+        ###  049.1405 -00.6028
+        # main_axes["gal"].text(49.14, -00.60 , "W51",  color=fontColor, alpha=fontAlpha,fontsize=fontSize ,horizontalalignment='center',   verticalalignment='center' )
+
+        # Aquila Rift
+        rA = 30
+        startL = 38
+        startB = 0.0
+        dL = startL - 30.5
+
+        text = main_axes["gal"].text(startL, startB, "Aquila Rift", color=fontColor, alpha=fontAlpha, fontsize=fontSize,
+                                     horizontalalignment='center', rotation=rA, verticalalignment='center')
+        text.set_path_effects([path_effects.Stroke(linewidth=lw, foreground="black"), path_effects.Normal()])
+
+        text = main_axes["gal"].text(startL - dL, startB + dL * np.tan(np.deg2rad(rA)), "Aquila Rift", color=fontColor,
+                                     alpha=fontAlpha, fontsize=fontSize, horizontalalignment='center', rotation=rA,
+                                     verticalalignment='center')
+        text.set_path_effects([path_effects.Stroke(linewidth=lw, foreground="black"), path_effects.Normal()])
+
+        dL2 = startL - 34.5
+        text = main_axes["gal"].text(startL - dL2, startB + dL2 * np.tan(np.deg2rad(rA)), "Aquila Rift",
+                                     color=fontColor, alpha=fontAlpha, fontsize=fontSize, horizontalalignment='center',
+                                     rotation=rA, verticalalignment='center')
+        text.set_path_effects([path_effects.Stroke(linewidth=lw, foreground="black"), path_effects.Normal()])
+
+        # Serpens NE
+        text = main_axes["gal"].text(31.5768569, 3.0808449, "Serpens NE", color=fontColor, alpha=fontAlpha,
+                                     fontsize=fontSize, horizontalalignment='center', verticalalignment='center')
+        text.set_path_effects([path_effects.Stroke(linewidth=lw, foreground="black"), path_effects.Normal()])
+
+        # LDN 566
+        # main_axes["gal"].text( 030.3739 , -01.0749,  r"\textbf{LDN 566}",  color='black', alpha=fontAlpha,fontsize=fontSize , ha='center',    va='center' )
+        text = main_axes["gal"].text(030.3739, -01.0749, "LDN 566", color=fontColor, alpha=fontAlpha, fontsize=fontSize,
+                                     ha='center', va='center')
+        text.set_path_effects([path_effects.Stroke(linewidth=lw, foreground="black"), path_effects.Normal()])
+        # LDN 617
+        text = main_axes["gal"].text(34.5724, -00.862, "LDN 617", color=fontColor, alpha=fontAlpha, fontsize=fontSize,
+                                     horizontalalignment='center', verticalalignment='center')
+        text.set_path_effects([path_effects.Stroke(linewidth=lw, foreground="black"), path_effects.Normal()])
+
+        # LDN 673
+        text = main_axes["gal"].text(46.263, -01.3303, "LDN 673", color=fontColor, alpha=fontAlpha, fontsize=fontSize,
+                                     horizontalalignment='center', verticalalignment='center')
+        text.set_path_effects([path_effects.Stroke(linewidth=lw, foreground="black"), path_effects.Normal()])
+
+        ##LDN 603
+        # main_axes["gal"].text( 33.163 , +01.496 ,  "LDN 603",  color=fontColor, alpha=fontAlpha,fontsize=fontSize , horizontalalignment='center',    verticalalignment='center' )
+
+        #####serpense NE cluster
+
+        # 2019AJ....157..200Z # 5 sources
+        # G031.24-00.11(H)
+        # main_axes["gal"].text(31.24, -0.11, "(2)",  color=fontColor, alpha=fontAlpha,fontsize=fontSize,horizontalalignment='center',   verticalalignment='center' )
+
+        # G040.42+00.70(C)
+        # main_axes["gal"].text(40.42,0.70, "(4)",  color=fontColor, alpha=fontAlpha,fontsize=fontSize ,horizontalalignment='center',   verticalalignment='center' )
+
+        # G042.03+00.19(C)
+        # main_axes["gal"].text(43.16, 0.01 , "(5)",  color=fontColor, alpha=fontAlpha,fontsize=fontSize ,horizontalalignment='center',   verticalalignment='center' )
+
+        # G049.26+00.31(C)
+        # main_axes["gal"].text(49.26, 0.31 , "(6)",  color=fontColor, alpha=fontAlpha,fontsize=fontSize ,horizontalalignment='center',   verticalalignment='center' )
+
+        #####################################################
+        # G035.19-00.74 2009ApJ...693..419Z
+        # main_axes["gal"].text(35.19,-00.74, "(7)",  color=fontColor, alpha=fontAlpha,fontsize=fontSize ,horizontalalignment='center',   verticalalignment='center' )
+
+        ######################### two
+
+        if 1:  # Galactic longgitude
+            xLocs = np.arange(26, 50, 2)
+            xLabels = map(int, xLocs)
+            xLabels = map(str, xLabels)
+
+            main_axes.set_ticklabel1_type("manual", locs=xLocs, labels=xLabels)
+
+            main_axes.set_xlabel(r"Galactic Longitude ($^{\circ}$)")
+
+        if 1:  # Galactic latitudes
+            xLocs = np.arange(-5, 6, 1)
+            xLabels = map(int, xLocs)
+            xLabels = map(str, xLabels)
+
+            main_axes.set_ticklabel2_type("manual", locs=xLocs, labels=xLabels)
+
+            main_axes.set_ylabel(r"Galactic Latitude ($^{\circ}$)")
+
+        # at = AnchoredText(algDendro, loc=3, frameon=False)
+        # axDendro.add_artist(at)
+        # at = AnchoredText(r"$^{12}\mathrm{CO}~(J=1\rightarrow0)$", loc=4, frameon=True,  prop={"color": "black","size":13 },pad=0.1)
+        # main_axes.add_artist(at )
+
+        text = main_axes["gal"].text(26, 4.2, r"$^{12}\mathrm{CO}~(J=1\rightarrow0)$", color="black", alpha=fontAlpha,
+                                     fontsize=8.3, ha='center', va='center', rotation=90)
+        # text.set_path_effects([path_effects.Stroke(linewidth=2, foreground="black"), path_effects.Normal()])
+
+        fig.tight_layout()
+        plt.savefig(saveTag+"_localM0.pdf", bbox_inches='tight')
+        #plt.savefig(saveTag+"_localM0.png", bbox_inches='tight', dpi=600, transparent=True)
+        plt.savefig(saveTag+"_localM0.png", bbox_inches='tight', dpi=600, transparent=True)
+
+    # plt.savefig("localM0.png", bbox_inches='tight', dpi=600   )
+
+    def getPhysicalAreaAlphaErrorList(self,MinPts,conType ):
+
+        """
+
+        :param MinPts:
+        :param conType:
+        :param code:
+        :return:
+        """
+        codeArea="PhysicalArea"
+        searchStrAlpha= self.saveAlphaPath+codeArea+"MinPts{}Con{}.npy".format( MinPts,conType )
+        searchResultsAlpha=glob.glob(searchStrAlpha)
+
+
+
+        codeAreaEror="PhysicalAreaError"
+        searchStrAlphaError= self.saveAlphaPath + "{}MinPts{}Con{}.npy".format(codeAreaEror, MinPts,conType )
+        searchResultsAlphaError=glob.glob(searchStrAlphaError)
+
+        if len(searchResultsAlpha )!=1:
+            return None,None
+
+
+        return np.load(searchResultsAlpha[0] ),   np.load(searchResultsAlphaError[0] )
+
+
+    def getPhysicalAreaAlphaErrorListSCIMES(self,MinPts=0,conType=0 ):
+
+        """
+
+        :param MinPts:
+        :param conType:
+        :param code:
+        :return:
+        """
+        codeArea="PhysicalArea"
+        searchStrAlpha= self.saveAlphaPath + "{}SCIMESMinPts{}Con{}.npy".format( codeArea, MinPts,conType )
+        searchResultsAlpha=glob.glob(searchStrAlpha)
+
+
+
+        codeAreaEror="PhysicalAreaError"
+        searchStrAlphaError= self.saveAlphaPath + "{}SCIMESMinPts{}Con{}.npy".format(codeAreaEror, MinPts,conType )
+        searchResultsAlphaError=glob.glob(searchStrAlphaError)
+
+        if len(searchResultsAlpha )!=1:
+            return None,None
+
+
+        return np.load(searchResultsAlpha[0] ),   np.load(searchResultsAlphaError[0] )
+
+
+
+
+    def getMassAlphaErrorList(self, MinPts, conType):
+
+        """
+
+        :param MinPts:
+        :param conType:
+        :param code:
+        :return:
+        """
+        codeArea = "massAlpha"
+        searchStrAlpha = self.saveAlphaPath +    "{}MinPts{}Con{}.npy".format(codeArea,MinPts, conType)
+        searchResultsAlpha = glob.glob(searchStrAlpha)
+
+        codeAreaEror = "massAlphaError"
+        searchStrAlphaError = self.saveAlphaPath + "{}MinPts{}Con{}.npy".format(codeAreaEror, MinPts, conType)
+        searchResultsAlphaError = glob.glob(searchStrAlphaError)
+
+        codeAreaComplete = "massAlphaComplete"
+        searchStrAlphaComplete = self.saveAlphaPath + "{}MinPts{}Con{}.npy".format(codeAreaComplete, MinPts, conType)
+        searchResultsAlphaComplete = glob.glob(searchStrAlphaComplete)
+
+
+
+        if len(searchResultsAlpha) != 1:
+            return None, None
+
+        return np.load(searchResultsAlpha[0]), np.load(searchResultsAlphaError[0]), np.load( searchResultsAlphaComplete[0] )
+
+
+
+    def getMassAlphaErrorListSCIMES(self, MinPts=0, conType=0 ):
+
+        """
+
+        :param MinPts:
+        :param conType:
+        :param code:
+        :return:
+        """
+        codeArea = "massAlpha"
+        searchStrAlpha = self.saveAlphaPath +    "{}SCIMESMinPts{}Con{}.npy".format(codeArea,MinPts, conType)
+        searchResultsAlpha = glob.glob(searchStrAlpha)
+
+        codeAreaEror = "massAlphaError"
+        searchStrAlphaError = self.saveAlphaPath + "{}SCIMESMinPts{}Con{}.npy".format(codeAreaEror, MinPts, conType)
+        searchResultsAlphaError = glob.glob(searchStrAlphaError)
+
+        codeAreaComplete = "massAlphaCompleteSCIMES"
+        searchStrAlphaComplete = self.saveAlphaPath + "{}MinPts{}Con{}.npy".format(codeAreaComplete, MinPts, conType)
+        searchResultsAlphaComplete = glob.glob(searchStrAlphaComplete)
+
+
+
+        if len(searchResultsAlpha) != 1:
+            return None, None
+
+        return np.load(searchResultsAlpha[0]), np.load(searchResultsAlphaError[0]), np.load( searchResultsAlphaComplete[0] )
+
+
+    def getAveragePhysicalAlphaAndError(self,calcode="physicalAlpha"):
+        """
+        calculate an average error for the physcai alpha
+        :return:
+        """
+
+        valueArray=np.asarray([])
+        errorArray=np.asarray([])
+
+        for eachCon in [1,2,3]:
+            for eachMinpts in self.conTypeG2650[eachCon]:
+
+                if calcode=="mass":
+                    alpha,alphaError,completeMass=self.getMassAlphaErrorList(eachMinpts,eachCon)
+
+                else :
+                    alpha,alphaError=self.getPhysicalAreaAlphaErrorList(eachMinpts,eachCon)
+
+                valueArray=np.concatenate([valueArray, alpha] )
+                errorArray=np.concatenate([errorArray, alphaError] )
+
+
+
+
+        print "average value and error"
+        print np.mean(valueArray) ,  np.std(valueArray, ddof=1)
+        print np.mean(errorArray) ,  np.std(errorArray, ddof=1)
+
+
+        meanAlpha=np.mean(valueArray)
+
+        stdAlpha=  (   np.std(valueArray,ddof=1)   )**2 +  (  np.mean(errorArray)    )**2
+        stdAlpha=np.sqrt(   stdAlpha  )
+
+        print meanAlpha,  stdAlpha
+
+        return meanAlpha,  stdAlpha
+
+
+
+
+
 
     def ZZZ(self):
             pass
@@ -4267,32 +4765,28 @@ doAllDBSCAN=allDBSCAN()
 spectralSavePath = "/home/qzyan/WORK/myDownloads/MWISPcloud/spectraSave/"
 
 
-if 0: # G13015
-    rawFITS="/home/qzyan/WORK/dataDisk/G140/G130150merge12.fits"
-    #
-
-    #doAllDBSCAN.pureDBSCAN(rawFITS, 3 , MinPts=4, saveTag="G130150", connectivity=1, inputRMS=None, redo=True, keepFITSFile=True)
-
-    #doAllDBSCAN.getMaskByLabel(doAllDBSCAN.fitsPath+"G130150dbscanS3P4Con1.fits", doAllDBSCAN.fitsPath+"G130150dbscanS3P4Con1.fit",  onlyClean=True )
-
-    TB=doAllDBSCAN.getMaskByLabel(doAllDBSCAN.fitsPath+"G130150dbscanS3P4Con1.fits", doAllDBSCAN.fitsPath+"G130150dbscanS3P4Con1.fit", onlySelect=True )
-
-    TB.write(doAllDBSCAN.fitsPath+"G130150dbscanS3P4Con1_clean.fit", overwrite=True)
-
-    sys.exit()
-####################################################################################
-if 0:#
-    #doAllDBSCAN.checkCriteria()
-    doAllDBSCAN.checkCriteriaWithHist( old = True )
-    doAllDBSCAN.checkCriteriaWithHist(  )
-
-    sys.exit()
-
-
-
 
 #Average flux alpha error,  0.02146005509641873
 #The mean flux alpha is 1.79, error is 0.03
+if 0:
+
+    doAllDBSCAN.getAveragePhysicalAlphaAndError(calcode="mass")
+    doAllDBSCAN.getAveragePhysicalAlphaAndError( )
+
+if 0:
+
+    #alpha,alphaError=doAllDBSCAN.getPhycalAreaAlphaErrorList(13,2)
+    alpha,alphaError,completeMass=doAllDBSCAN.getMassAlphaErrorList(13,2)
+
+
+    #print alpha
+    print alphaError
+    print completeMass
+if 0:#plot
+    #doAllDBSCAN.drawOverallMomentCloudMask()
+
+    doAllDBSCAN.drawOverallMomentCloudMask(fitsFile="DBSCANMask_LargestMC_G2650LocaldbscanS2P4Con1_Clean.fits",saveTag="cloudLargest")
+
 if 0: #test get TBList #
 
     pass
@@ -4308,8 +4802,8 @@ if 0: #test get TBList #
 
     #doAllDBSCAN.plotAreaAlpha()
 
-    #doAllDBSCAN.plotAreaPhysical()
-    #doAllDBSCAN.plotAreaAlphaPhysical()
+    doAllDBSCAN.plotAreaPhysical()
+    doAllDBSCAN.plotAreaAlphaPhysical()
 
 
     #doAllDBSCAN.plotFluxAlpha()
@@ -4325,14 +4819,68 @@ if 0: #test get TBList #
     #doAllDBSCAN.drawHDBSCAN()
 
     ####################################
-    #doAllDBSCAN.plotMass()
+    doAllDBSCAN.plotMass()
 
-    #doAllDBSCAN.plotMassAlpha()
+    doAllDBSCAN.plotMassAlpha()
 
     #doAllDBSCAN.drawNVariation()
 
 
+
     sys.exit()
+
+
+
+
+
+
+if 0: # Q1subfits test
+    ############################################parameter setings
+    rawFITS="/home/qzyan/WORK/dataDisk/MWISP/G120/100_150_U.fits" #input raw coFITS
+    doAllDBSCAN.rmsCO12=0.5 # K, set the rms
+    saveTag="Q2Test" #your project code
+
+    cutoff=2 #in units of sigma
+    minPts=4
+    contype=1
+
+
+    doAllDBSCAN.pureDBSCAN(rawFITS, cutoff , MinPts=minPts, saveTag= saveTag , connectivity= contype , inputRMS=None, redo=True, keepFITSFile=True)
+
+
+    if 1:
+        outputFITS= doAllDBSCAN.fitsPath+saveTag+"dbscanS{}P{}Con{}.fits".format(cutoff,minPts,contype)
+        outputTable= doAllDBSCAN.fitsPath+saveTag+"dbscanS{}P{}Con{}.fit".format(cutoff,minPts,contype)
+
+    doAllDBSCAN.getMaskByLabel(  outputFITS  , outputTable, onlyClean=True )
+
+    TB=doAllDBSCAN.getMaskByLabel( outputFITS ,  outputTable , onlySelect=True ) #only Select=True, meas we only want to select the catlaog
+    TB.write(doAllDBSCAN.fitsPath+saveTag+"dbscanS{}P{}Con{}_clean.fit".format(cutoff,minPts,contype), overwrite=True)
+
+    sys.exit()
+
+
+if 0: # G13015
+    rawFITS="/home/qzyan/WORK/dataDisk/G140/G130150merge12.fits"
+    #
+
+    #doAllDBSCAN.pureDBSCAN(rawFITS, 3 , MinPts=4, saveTag="G130150", connectivity=1, inputRMS=None, redo=True, keepFITSFile=True)
+
+    #doAllDBSCAN.getMaskByLabel(doAllDBSCAN.fitsPath+"G130150dbscanS3P4Con1.fits", doAllDBSCAN.fitsPath+"G130150dbscanS3P4Con1.fit",  onlyClean=True )
+
+    #TB=doAllDBSCAN.getMaskByLabel(doAllDBSCAN.fitsPath+"G130150dbscanS3P4Con1.fits", doAllDBSCAN.fitsPath+"G130150dbscanS3P4Con1.fit", onlySelect=True )
+
+    #TB.write(doAllDBSCAN.fitsPath+"G130150dbscanS3P4Con1_clean.fit", overwrite=True)
+
+    sys.exit()
+####################################################################################
+if 0:#
+    #doAllDBSCAN.checkCriteria()
+    doAllDBSCAN.checkCriteriaWithHist( old = True )
+    doAllDBSCAN.checkCriteriaWithHist(  )
+
+    sys.exit()
+
 
 
 
@@ -4439,17 +4987,6 @@ if 0:# out put spectral save, and draw examples
 
     doDBSCAN.getExamineSpectral( savePath=spectralSavePath )
     sys.exit()
-
-
-
-
-
-
-
-
-
-
-
 
 
 

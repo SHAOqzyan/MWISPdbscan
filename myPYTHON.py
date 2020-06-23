@@ -6,6 +6,7 @@
 #
 from scipy.odr import *
 import numpy as np
+from astropy.table import Table,vstack
 
 from astropy.io import fits
 
@@ -13,7 +14,7 @@ from matplotlib import pyplot as plt
 
 from astropy.wcs import WCS
 import os
-
+import math
 import os.path
 import pywcsgrid2
 from matplotlib import rc
@@ -124,8 +125,6 @@ class myFITS:
 		"""
 		l,b,v=LBV
 
-
-
 		z,y,x=data.shape 
 		
 		try :
@@ -148,7 +147,52 @@ class myFITS:
 			return np.NaN
 		
 		return data[indexZ,indexY,indexX]
-		
+
+	@staticmethod
+	def weighted_avg_and_std(values, weights):
+		"""
+		Return the weighted average and standard deviation.
+
+		values, weights -- Numpy ndarrays with the same shape.
+		"""
+		average = np.average(values, weights=weights)
+		# Fast and numerically precise:
+		variance = np.average((values - average) ** 2, weights=weights)
+
+		# if variance<0:
+		# print weights
+
+		return (average, math.sqrt(variance))
+
+	@staticmethod
+	def getPixValue(data, head, LB):
+		"""
+		This function is used to get a voxel value from a data cube
+
+		v, km/s
+		"""
+		l, b  = LB
+
+		y, x = data.shape
+		dataWCS=WCS(head)
+
+
+		try:
+			indexX, indexY = dataWCS.wcs_world2pix(l, b, 0)
+		except:
+			indexX, indexY,indexZ = dataWCS.wcs_world2pix(l, b, 0, 0)
+
+		indexX = int(round(indexX))
+		indexY = int(round(indexY))
+
+
+
+
+		if indexX >= x or indexY >= y  :
+			return np.NaN
+
+		return data[indexY, indexX]
+
 	@staticmethod
 	def downTo2D(fitsFile,outPUT=None,overwrite=True):
 		"""
@@ -262,13 +306,13 @@ class myFITS:
 
 		:param dadta:
 		:param dataHeader:
-		:param targetVelResolution:
+		:param targetVelResolution: in unites of km/s
 		:param saveName:
 		:return:
 		"""
 		#
 
-		print "Starting to regrid velocity axis, this may take a little while"
+		print "Starting to regrid the velocity axis, this may take a little while..."
 
 		cube = SpectralCube.read(fitsName)
 
@@ -309,7 +353,7 @@ class myFITS:
 
 		interp_Cube.write(saveName,overwrite=True )
 
-
+		print "Smooting the veloicyt axis done!"
 	def smoothSpaceFITS(self,data,dataHeader,rawBeam,resultBeam,outPutName): # arcmin
 		
 		"""
@@ -436,6 +480,15 @@ class myFITS:
 		
 		return avgSpec,vs
 
+	def box(self, centerL, centerB, lSize, bSize, dummy=0):
+		"""
+        return lRange and B Range
+        """
+
+		lSize = lSize / 3600.
+		bSize = bSize / 3600.
+
+		return [centerL - lSize / 2., centerL + lSize / 2.], [centerB - bSize / 2., centerB + bSize / 2.]
 
 	def getAverageSpecByLBrange(self,fitsFile,lRange,bRange ):
 		
@@ -443,7 +496,7 @@ class myFITS:
 		"""
 		calculate the average fitsFITS in within the lRange and bRnage
 		"""
-		COdata,COheader=self.readFITS( fitsFile)
+		#COdata,COheader=self.readFITS( fitsFile)
 
 		cropedFITS="croped.fits" #temperature 
 
@@ -694,11 +747,11 @@ class myFITS:
 		Parameters: data, dataHeader,l,b
 		
 		This function is used to get a voxel value from a data cube
-		
-		
-		
+
 		v, km/s
 		the unit of returned veloicyt is kms
+
+		return spectral,velocities
 		"""
 		wcs = WCS(dataHeader)
 		xindex,yindex=wcs.all_world2pix(l,b,0,0)[0:2]
@@ -721,7 +774,7 @@ class myFITS:
 		# 
 		return spectral,velocities
 
- 
+
 	@staticmethod
 	def getSpectraByIndex(data,dataHeader,indexX,indexY):
 		"""
@@ -1210,7 +1263,8 @@ class myFITS:
 
 		data,head= myFITS.readFITS(fitsName)
 
-		fits.writeto(saveFITS,np.float32(data),header=head)
+		fits.writeto(saveFITS,np.float32(data),header=head,overwrite=True)
+
 
 
 	@staticmethod
@@ -1328,9 +1382,6 @@ class myFITS:
 		ab=1-2./np.pi
 
 		return np.sqrt( variance/ab  )
-
-
-
 
 	@staticmethod
 	def cropFITS2D(inFITS,outFITS=None, Lrange=None,Brange=None,overWrite=False):
@@ -1546,8 +1597,65 @@ class myFITS:
 			print "The shape of pvdata with manual integration is unequal!"
 			
 			
+	def selectTBByColRange(self,TB, colName, minV=None,maxV=None):
+		"""
+		Select colnames to form a new table
+		:param TB:
+		:param colList:
+		:return:
+		"""
+		range=[minV,maxV]
+		if range[0] is None and range[1] is None:
+			return TB
+
+		if range[0] is None and range[1] is not None: #upper cut
+
+			selectCriteria = TB[colName]<=range[1]
+
+			return TB[selectCriteria]
 
 
+		if range[0] is not None and range[1] is None:  # lower cut
+
+			selectCriteria = TB[colName]>=range[0]
+
+			return TB[selectCriteria]
+
+		if range[0] is not None and range[1] is not None:  #  both lower and upper cut
+			selectCriteria1 = TB[colName]>=range[0]
+			selectCriteria2 = TB[colName]<=range[1]
+			selectCriteria = np.logical_and(selectCriteria1,selectCriteria2)
+			return TB[selectCriteria]
+
+
+
+	def showCloudPositions(self,cloudTB):
+		"""
+		Only used for cloud tables
+		:param cloudTB:
+		:return:
+		"""
+
+		newTBColList=[ cloudTB["peakL"], cloudTB["peakB"], cloudTB["peakV"],cloudTB["allChannel"], cloudTB["peakChannel"], cloudTB["conseCol"] ]
+
+		print Table( newTBColList )
+
+	def selectTBByCols(self,TB,colNameList):
+		"""
+		Select colnames to form a new table
+		:param TB:
+		:param colList:
+		:return:
+		"""
+
+		colList=[]
+
+
+		for eachName in colNameList:
+			colList.append(TB[eachName])
+
+
+		return Table(colList)
 
 
 	def writeTreeStructure(self,dendro,saveName):
@@ -1572,22 +1680,30 @@ class myFITS:
 
 		
 
-	def getRMSFITS(self,fitsCube,saveName):
+	def getRMSFITS(self,fitsCube,saveName,returnRMSValue=False,returnData=False):
 		pass
 
 		data,head=self.readFITS(fitsCube)
 
-		data=np.nan_to_num(data)
+		#data=np.nan_to_num(data)
 
 		#remove positive values
-		data[data>0]=0
+		data[data>=0]= np.nan
 
-		stdFITS=np.std(data, axis=0 )
-
+		stdFITS=np.nanstd(data, axis=0,ddof=1 )
 		stdFITS=stdFITS/np.sqrt( 1-2./np.pi )
 
-		fits.writeto(saveName,stdFITS,header=head,overwrite=True)
+		#stdFITSByMean=-np.nanmean(data, axis=0 )
+		#stdFITSByMean=stdFITSByMean*np.sqrt(np.pi)/np.sqrt(2)
 
+		if returnRMSValue:
+			return np.nanmean( stdFITS )
+
+		if returnData:
+			return stdFITS
+
+		fits.writeto(saveName,stdFITS ,header=head,overwrite=True)
+		return saveName
 	##########################################################################################
 	def selectTBFormal(self, TB, cutOff=2, pixN=16, minDelta=3, hasBeam=True, minChannel=3):
 		"""

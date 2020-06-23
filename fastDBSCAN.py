@@ -16,7 +16,7 @@ import sys
 from skimage.morphology import erosion, dilation
 from scipy.ndimage import label, generate_binary_structure,binary_erosion,binary_dilation
 from sklearn.cluster import DBSCAN
-#from madda import  myG210
+from madda import  myG210
 from mpl_toolkits.axes_grid.anchored_artists import AnchoredText
 import seaborn as sns
 
@@ -33,7 +33,7 @@ gaiaDis=GAIADIS()
 
 doFITS=myFITS()
 
-#doG210 = myG210()
+doG210 = myG210()
 
 def weighted_avg_and_std(values, weights):
 	"""
@@ -56,7 +56,7 @@ def weighted_avg_and_std(values, weights):
 class myDBSCAN(object):
 
 	rms = 0.5
-	TBModel="minV3minP16_dendroCatTrunk.fit"
+	TBModel="/home/qzyan/WORK/myDownloads/MWISPcloud/minV3minP16_dendroCatTrunk.fit"
 
 	tmpPath="./tmpFiles/"
 
@@ -176,13 +176,15 @@ class myDBSCAN(object):
 		"""
 		#pass
 
+
+
 		if inputRMS==None:
 			minValue = min_sigma*self.rms
 
 		else:
 			minValue = min_sigma* inputRMS
 
-
+		print "The minimum cutoff value is", minValue,"?????????????????????????????"
 
 		Nz,Ny,Nx  = COdata.shape
 		extendMask = np.zeros([Nz+2,Ny+2,Nx+2] ,dtype=int)
@@ -194,6 +196,7 @@ class myDBSCAN(object):
 
 		else:
 			#pass,need to devide
+			print "Using rms fits...",rmsFITS
 			rmsData,rmsHead = myFITS.readFITS(rmsFITS)
 			rmsCOData=COdata/rmsData
 			goodValues= rmsCOData>=min_sigma
@@ -228,7 +231,7 @@ class myDBSCAN(object):
 
 		expandTry = dilation(labeled_core , s  ) # first try to expand, then only keep those region that are not occupied previously
 		#it is possible  that a molecular cloud may have less pixN than 8, because of the closeness of two
-
+		#only expanded, one time
 		labeled_core[  selectExpand  ] =  expandTry[ selectExpand  ]
 
 		labeled_array = labeled_core
@@ -380,8 +383,9 @@ class myDBSCAN(object):
 
 			self.getCatFromLabelArray(COFITS,saveLabel,self.TBModel,saveMarker=saveMarker,  minPix=min_pix,rms= min_sigma  )
 
-	def getCatFromLabelArray(self, CO12FITS, labelFITS, TBModel, minPix=8, rms=2, saveMarker="",  region="", minPixN=8, minChannelN=3, peakSigma=5, has22=True,
-							 pureDBSCAN=False):
+
+
+	def getCatFromLabelArray(self,  CO12FITS,labelFITS,TBModel,minPix=16,rms=2 ,   saveMarker="", peakSigma=3,region="",pureDBSCAN=False):
 		"""
 		Extract catalog from label fits, the minPix and rms is only used for saving
 		:param labelArray:
@@ -389,238 +393,246 @@ class myDBSCAN(object):
 		:return:
 		"""
 
- 
+		print "The rms is ",self.rms
 
 
-		print "The rms is ", self.rms
+		#do not make any selection here, because of the closeness of many clouds, some cloud may have pixels less than 8, we should keep them
+		#they are usefull to mask edge sources..., and to clean fits
 
-		# do not make any selection here, because of the closeness of many clouds, some cloud may have pixels less than 8, we should keep them
-		# they are usefull to mask edge sources..., and to clean fits
-
-		if saveMarker == "" :
-			saveName = region + "DBSCAN{}_P{}Cat.fit".format(rms, minPix)
+		if saveMarker=="":
+			saveName= region+"DBSCAN{}_P{}Cat.fit".format(rms,minPix)
 
 		else:
-			saveName = saveMarker + ".fit"
+			saveName=saveMarker+".fit"
 
-		#
-
-		clusterTBOld = Table.read(TBModel)
+		clusterTBOld=Table.read( TBModel )
 
 		###
-		dataCO, headCO = myFITS.readFITS(CO12FITS)
+		dataCO, headCO = myFITS.readFITS( CO12FITS )
 
-		# dataCO=np.nan_to_num(dataCO), should not have Nan values
+		#dataCO=np.nan_to_num(dataCO), should not have Nan values
 
-		dataCluster, headCluster = myFITS.readFITS(labelFITS)
 
-		# create a data cube to find points that satisfy to have three consecutive points, can we find them ?
+		dataCluster , headCluster=myFITS.readFITS( labelFITS )
+
+		#create a data cube to find points that satisfy to have three consecutive points, can we find them ?
 		minV = np.nanmin(dataCluster[0])
+
 
 		Nz, Ny, Nx = dataCluster.shape
 
-		# consecutiveData= np.zeros( ( Nz+2,Ny,Nx   )   )
+		#consecutiveData= np.zeros( ( Nz+2,Ny,Nx   )   )
 
-		# b= dataCluster> minV
 
-		# consecutiveData[1:-1]= dataCluster> minV
-		# doSum= consecutiveData[0:-2]+consecutiveData[1:-1]+ consecutiveData[2: ]
-		# consecutivepoints
-		# P3 = doSum>=3
+		#b= dataCluster> minV
 
-		wcsCloud = WCS(headCluster)
 
-		clusterIndex1D = np.where(dataCluster > minV)
-		clusterValue1D = dataCluster[clusterIndex1D]
+		#consecutiveData[1:-1]= dataCluster> minV
+		#doSum= consecutiveData[0:-2]+consecutiveData[1:-1]+ consecutiveData[2: ]
+		#consecutivepoints
+		#P3 = doSum>=3
 
-		Z0, Y0, X0 = clusterIndex1D
+		wcsCloud=WCS( headCluster )
 
-		newTB = Table(clusterTBOld[0])
-		newTB["sum"] = newTB["flux"]
+		clusterIndex1D= np.where( dataCluster>minV )
+		clusterValue1D=  dataCluster[clusterIndex1D ]
 
-		newTB["l_rms"] = newTB["v_rms"]
-		newTB["b_rms"] = newTB["v_rms"]
+		Z0,Y0,X0 = clusterIndex1D
 
-		newTB["pixN"] = newTB["v_rms"]
-		newTB["peak"] = newTB["v_rms"]
+		newTB= Table( clusterTBOld[0])
+		newTB["sum"]=newTB["flux"]
 
-		newTB["peakL"] = newTB["v_rms"]
-		newTB["peakB"] = newTB["v_rms"]
-		newTB["peakV"] = newTB["v_rms"]
-		newTB["area_accurate"] = newTB["v_rms"]  # the column of area_accurate need to cos(b) facor
+		newTB["l_rms"]=newTB["v_rms"]
+		newTB["b_rms"]=newTB["v_rms"]
 
-		# newTB["Nchannel"]=newTB["v_rms"] #number of channels, whis is used to sellect
+		newTB["pixN"]=newTB["v_rms"]
+		newTB["peak"]=newTB["v_rms"]
 
-		newTB["allChannel"] = newTB["v_rms"]  # number channel involved
-		newTB["has22"] = newTB["v_rms"]  # number channel involved
+		newTB["peakL"]=newTB["v_rms"]
+		newTB["peakB"]=newTB["v_rms"]
+		newTB["peakV"]=newTB["v_rms"]
+		newTB["area_accurate"]=newTB["v_rms"] # the column of area_accurate need to cos(b) facor
 
-		zeroProjection = np.zeros((Ny, Nx))  # one zero channel, used to get the projection area and
-		zeroProjectionExtend = np.zeros((Ny + 1, Nx + 1))
+		#newTB["Nchannel"]=newTB["v_rms"] #number of channels, whis is used to sellect
 
-		idCol = "_idx"
+		newTB["allChannel"]=newTB["v_rms"] # number channel involved
+		newTB["has22"]=newTB["v_rms"] # number channel involved
 
-		# count all clusters
 
-		# ids,count=np.unique(dataCluster,return_counts=True )
-		ids, count = np.unique(clusterValue1D, return_counts=True)
-		GoodIDs = ids
-		GoodCount = count
-		print "Total number of raw turnks?", len(GoodIDs)
-		# print "Total number of Good Trunks? ",len(GoodIDs)
+		zeroProjection =  np.zeros( ( Ny , Nx  ) ) # one zero channel, used to get the projection area and
+		zeroProjectionExtend = np.zeros( ( Ny+1, Nx+1 ) )
 
-		# dataCO,headCO=doFITS.readFITS( CO12FITS )
-		widgets = ['Recalculating cloud parameters: ', Percentage(), ' ', Bar(marker='0', left='[', right=']'), ' ',
-				   ETA(), ' ', FileTransferSpeed()]  # see docs for other options
 
-		catTB = newTB.copy()
+
+		idCol="_idx"
+
+
+		#count all clusters
+
+		#ids,count=np.unique(dataCluster,return_counts=True )
+		ids,count=np.unique(  clusterValue1D,  return_counts=True  )
+		GoodIDs=ids
+		GoodCount=count
+		print "Total number of trunks? ",len(ids)
+		#print "Total number of Good Trunks? ",len(GoodIDs)
+
+		#dataCO,headCO=doFITS.readFITS( CO12FITS )
+		widgets = ['Recalculating cloud parameters: ', Percentage(), ' ', Bar(marker='0',left='[',right=']'),  ' ', ETA(), ' ', FileTransferSpeed()] #see docs for other options
+
+
+
+		catTB=newTB.copy()
 		catTB.remove_row(0)
 
-		# zeroP
-		# remove any cloud with voxels less than minPix
-		selectCondictio = GoodCount >= minPixN  #
-		GoodCount = GoodCount[selectCondictio]
-		GoodIDs = GoodIDs[selectCondictio]
-		print len(GoodIDs), " clouds has at least {} voxels.".format(minPixN)
-
+		#zeroP
+		#remove any cloud with voxels less than minPix
+		selectCondictio=GoodCount>=16 #
+		GoodCount=GoodCount[selectCondictio]
+		GoodIDs=GoodIDs[selectCondictio]
+		
+		
 		pbar = ProgressBar(widgets=widgets, maxval=len(GoodIDs))
 		pbar.start()
+		print len(GoodIDs),"left after First selection does this work?"
 
-		for i in range(len(GoodIDs)):
+		####
 
-			# i would be the newID
-			newID = GoodIDs[i]
-			pixN = GoodCount[i]
+		for i in  range(len(GoodIDs)) :
 
-			newRow = newTB[0]
+			#i would be the newID
+			newID= GoodIDs[i]
+			pixN=GoodCount[i]
+
+			newRow=newTB[0]
 
 			newRow[idCol] = newID
 
-			cloudIndex = self.getIndices(Z0, Y0, X0, clusterValue1D, newID)
+			cloudIndex=self.getIndices(Z0,Y0,X0,clusterValue1D,newID)
 
-			coValues = dataCO[cloudIndex]
+			#step1
+			#peak should be done first
+			coValues=  dataCO[ cloudIndex ]
 
-			# P3Value= P3[cloudIndex] # used to find
-
-			# sortedCO=np.sort(coValues)
-			# peak = sortedCO[-1] #np.max( coValues)
-			# peak2=sortedCO[-2]
-
-			cloudV = cloudIndex[0]
-			cloudB = cloudIndex[1]
-			cloudL = cloudIndex[2]
-			###############
-			diffVs = np.unique(cloudV)
-
-			if len(diffVs) < minChannelN :  # reject all cloud that has channels less than 3 channels
-				continue
-
-			peak = np.max(coValues)
+			peak= np.max(coValues)
 			################################################
-			# remve all clouds less than 4  sigma
-			if peak < peakSigma * self.rms: #
+			#remve all clouds less than 5 sigma
+			if peak< 5*self.rms: #remove those clouds peak less than 4 sigma
 				continue
 
-			peakIndex = coValues.argmax()
+			#P3Value= P3[cloudIndex] # used to find
+
+			#sortedCO=np.sort(coValues)
+			#peak = sortedCO[-1] #np.max( coValues)
+			#peak2=sortedCO[-2]
+
+			cloudV=cloudIndex[0]
+			cloudB=cloudIndex[1]
+			cloudL=cloudIndex[2]
+			############### ###
+			diffVs= np.unique(cloudV)
+
+			if len(diffVs)<3: #reject all cloud that has channels less than 3 channels
+				continue
+
+			peakIndex=coValues.argmax()
 
 			peakV = cloudV[peakIndex]
 			peakB = cloudB[peakIndex]
 			peakL = cloudL[peakIndex]
 
-			# get the exact peak position, which would be used to
+			#get the exact peak position, which would be used to
 
-			projectIndex = tuple([cloudB, cloudL])
+			projectIndex= tuple( [cloudB, cloudL ] )
 
-			zeroProjection[projectIndex] = 1
-			zeroProjectionExtend[0:-1, 0:-1] = zeroProjection
-			sum22 = zeroProjectionExtend[0:-1, 0:-1] + zeroProjectionExtend[0:-1, 1:] + zeroProjectionExtend[1:,
-																						0:-1] + zeroProjectionExtend[1:,
-																								1:]
+			zeroProjection[projectIndex] =1
+			zeroProjectionExtend[0:-1,0:-1]=zeroProjection
+			sum22= zeroProjectionExtend[0:-1,0:-1] +  zeroProjectionExtend[0:-1,1: ]+ zeroProjectionExtend[1: , 0 :-1]+zeroProjectionExtend[1: , 1: ]
 
-			# if any pixel>4:
-			testHas22=  4 in sum22
-			if testHas22:
+			#if any pixel>4:
+			#
+
+			if 4 in sum22:
 				newRow["has22"] = 1
-			else:
-				#continue #reject this cloud
-				newRow["has22"] = 0
 
-			if has22 and not testHas22: #require has22, and not has 22
+			else: #Serious bug
+				zeroProjection[projectIndex] = 0
+				zeroProjectionExtend[0:-1, 0:-1] = zeroProjection
 				continue
+				#newRow["has22"] = 0
 
 
-			# calculate the accurate
+			#calculate the accurate, this is only used for data at high Galactic latitude, and useless form the MWISP survey
+			# to increase the speed, this part is commentted
 
-			indexB2D, indexL2D = np.where(zeroProjection == 1)
-
-			_, BS2D, LS2D = wcsCloud.wcs_pix2world(indexL2D, indexB2D, 0, 0)
-
-			area_accurate = np.sum(np.cos(np.deg2rad(BS2D))) * 0.25
-
-			newRow["area_accurate"] = area_accurate
-
-
-
-
-			sumCO = np.sum(coValues)
-
-			Vcen, Vrms = weighted_avg_and_std(cloudV, coValues)
-			Bcen, Brms = weighted_avg_and_std(cloudB, coValues)
-			Lcen, Lrms = weighted_avg_and_std(cloudL, coValues)
-
-			# calculate the exact area
-
-			# LBcore = zip(cloudB, cloudL)
-			# pixelsN= {}.fromkeys(LBcore).keys() #len( set(LBcore) )
-			# area_exact=len(pixelsN)*0.25 #arc mins square
-			area_exact = np.sum(zeroProjection) * 0.25
-			# print area_exact,area_accurate
-			# find the 2*2 patter
+			#indexB2D,indexL2D=np.where(zeroProjection==1 )
+			#_,BS2D, LS2D = wcsCloud.wcs_pix2world(indexL2D,indexB2D,  0, 0)
+			#area_accurate=np.sum( np.cos( np.deg2rad(BS2D) )    )*0.25
+			#newRow["area_accurate"]= area_accurate
 
 
 
-			# dataClusterNew[cloudIndex] =newID
+			sumCO=np.sum( coValues )
 
-			# save values
-			newRow["pixN"] = pixN
-			newRow["peak"] = peak
 
-			newRow["peakV"] = peakV
-			newRow["peakB"] = peakB
-			newRow["peakL"] = peakL
+			Vcen,Vrms= weighted_avg_and_std(cloudV, coValues )
+			Bcen,Brms= weighted_avg_and_std(cloudB, coValues )
+			Lcen,Lrms= weighted_avg_and_std(cloudL, coValues )
 
-			# newRow["peak2"]= peak2
+			#calculate the exact area
 
-			newRow["sum"] = sumCO
-			newRow["area_exact"] = area_exact
+			#LBcore = zip(cloudB, cloudL)
+			#pixelsN= {}.fromkeys(LBcore).keys() #len( set(LBcore) )
+			#area_exact=len(pixelsN)*0.25 #arc mins square
+			area_exact= np.sum( zeroProjection )*0.25
 
-			newRow["x_cen"], newRow["y_cen"], newRow["v_cen"] = wcsCloud.wcs_pix2world(Lcen, Bcen, Vcen, 0)
-			newRow["v_cen"] = newRow["v_cen"] / 1000.
-			dv = headCluster["CDELT3"] / 1000.  # km/s
 
-			dl = abs(headCluster["CDELT1"])  # deg
+			newRow["area_exact"]= area_exact
 
-			newRow["v_rms"] = Vrms * dv
+			#dataClusterNew[cloudIndex] =newID
 
-			newRow["l_rms"] = Lrms * dl
-			newRow["b_rms"] = Brms * dl
+			#save values
+			newRow["pixN"]= pixN
+			newRow["peak"]= peak
 
-			# _, Nchan=np.unique( cloudV, return_counts=True)
+			newRow["peakV"]= peakV
+			newRow["peakB"]= peakB
+			newRow["peakL"]= peakL
 
-			# newRow["Nchannel"] =    np.max(P3Value)# if there is a three consecutive spectra in the cloud
-			newRow["allChannel"] = len(diffVs)
+			#newRow["peak2"]= peak2
+
+			newRow["sum"]= sumCO
+
+			newRow["x_cen"],  newRow["y_cen"], newRow["v_cen"]= wcsCloud.wcs_pix2world( Lcen, Bcen,Vcen ,0)
+			newRow["v_cen"]= newRow["v_cen"]/1000.
+			dv=headCluster["CDELT3"]/1000. #km/s
+
+			dl= abs( headCluster["CDELT1"] ) #deg
+
+			newRow["v_rms"] = Vrms*dv
+			newRow["l_rms"] = Lrms*dl
+			newRow["b_rms"] = Brms*dl
+
+			#_, Nchan=np.unique( cloudV, return_counts=True)
+
+			#newRow["Nchannel"] =    np.max(P3Value)# if there is a three consecutive spectra in the cloud
+			newRow["allChannel"] =   len( diffVs )
+
+
 
 			catTB.add_row(newRow)
 
 			zeroProjection[projectIndex] = 0
-			zeroProjectionExtend[0:-1, 0:-1] = zeroProjection
+			zeroProjectionExtend[ 0:-1,0:-1 ]=zeroProjection
 
 			pbar.update(i)
 
-		pbar.finish()
-		# save the clouds
 
-		# fits.writeto(self.regionName+"NewCloud.fits", dataClusterNew,header=headCluster,overwrite=True   )
-		catTB.write(saveName, overwrite=True)
+
+		pbar.finish()
+		#save the clouds
+
+		#fits.writeto(self.regionName+"NewCloud.fits", dataClusterNew,header=headCluster,overwrite=True   )
+		catTB.write( saveName ,overwrite=True)
 
 		return saveName
 
@@ -916,7 +928,7 @@ class myDBSCAN(object):
 			#dis= ( 0.033*v + 0.175)*1000 # pc
 			dis= ( 0.033*v + 0.180)*1000 # pc
 
-			if dis<0  or dis> 1500 :
+			if dis<200  or dis> 1500 :
 				continue
 
 			N=eachR["area_exact"]/0.25
@@ -941,7 +953,7 @@ class myDBSCAN(object):
 			#dis= ( 0.033*v + 0.175)*1000 # pc
 			dis= ( 0.033*v + 0.180)*1000 # pc
 
-			if dis<0  or dis> 1500 :
+			if dis<200  or dis> 1500 : #remove those clouds less than 200 pc
 				continue
 
 			fluxSum= eachR["sum"]*0.2
@@ -1126,10 +1138,10 @@ class myDBSCAN(object):
 			areaArray=areaArray/3600.
 
 		if maxArea!=None:
-			select=np.logical_and( areaArray>minArea, areaArray<maxArea)
+			select=np.logical_and( areaArray>=minArea, areaArray<=maxArea)
 
 		else:
-			select= areaArray>minArea
+			select= areaArray>=minArea
 
 		rawArea =   areaArray[ select ]
 
@@ -2545,7 +2557,10 @@ class myDBSCAN(object):
 
 			massArray = self.getMass(eachTB  )
 			#minFlux=324*self.rms*0.2*eachSigma*3    # K km/s, the last 2 is the two channels
-			minFlux=144*self.rms*0.2*eachSigma*3    # K km/s, the last 2 is the two channels
+			#minFlux=144*self.rms*0.2*eachSigma*3    # K km/s, the last 2 is the two channels
+			minFlux=16*self.rms*0.2*eachSigma    # K km/s, the last 2 is the two channels
+
+			
 			minMass=self.calmassByXfactor(minFlux,1500)
 
 			print minMass,"The complete mass"
@@ -4512,10 +4527,17 @@ class myDBSCAN(object):
 
 		#im = main_axes.imshow(np.log(dataCO),origin='lower',cmap="jet",   interpolation='none')
 
-		im = main_axes.imshow( np.log(dataCO) ,origin='lower',cmap="jet",  vmin=np.log(1.9*2.5), vmax= np.log( 110) , interpolation='none')
+		#im = main_axes.imshow( np.log(dataCO) ,origin='lower',cmap="jet",  vmin=np.log(1.9*2.5), vmax= np.log( 110) , interpolation='none')
+		im = main_axes.imshow( np.log(dataCO) ,origin='lower',cmap="jet",  vmin=np.log(1.9*2.5) , vmax= np.log( 110) , interpolation='none')
+
+		main_axes.set_facecolor("black")
 
 		#main_axes.set_facecolor('silver')
-		main_axes.axis[:].major_ticks.set_color("purple")
+		#main_axes.axis[:].major_ticks.set_color("purple")
+		main_axes.axis[:].major_ticks.set_color("purple") #for kepu
+
+
+
 		cb=cb_axes.colorbar(im)
 		#cb_axes.axis["right"].toggle(ticklabels=True)
 		cb_axes.set_ylabel(r"K km s$^{-1}$")
@@ -4657,7 +4679,8 @@ class myDBSCAN(object):
 
 		fig.tight_layout()
 		plt.savefig("localM0.pdf", bbox_inches='tight')
-		plt.savefig("localM0.png", bbox_inches='tight', dpi=300)
+		plt.savefig("localM0.png", bbox_inches='tight', dpi=600, transparent=True  )
+		#plt.savefig("localM0.png", bbox_inches='tight', dpi=600   )
 
 	def drawLV(self,  vRange=[-6, 30]):
 		"""
@@ -5677,7 +5700,7 @@ class myDBSCAN(object):
 
 
 
-	def produceSingleCubesForEachCloud(self, labelsFITS , cloudTBFile ):
+	def produceSingleCubesForEachCloud(self, labelsFITS , cloudTBFile,savePath="./cloudSubCubes/"):
 		"""
 
 		#output all data cubes for each cloud
@@ -5687,11 +5710,11 @@ class myDBSCAN(object):
 
 		#################
 
-		savePath="./cloudSubCubes/"
+		#savePath=""
 
 		cloudTB=Table.read(cloudTBFile)
 
-		cloudTB=self.removeWrongEdges(cloudTB)
+		#cloudTB=self.removeWrongEdges(cloudTB)
 		print len( cloudTB),"Number of molecular clouds"
 
 		dataCluster,headCluster=myFITS.readFITS( labelsFITS )
@@ -6476,6 +6499,72 @@ def ZZZZZZ(self):
 
 #############################
 
+
+
+# G2650Figures
+if 0:
+	doDBSCAN = myDBSCAN()
+	doDBSCAN.drawOverallMoment()
+	#doDBSCAN.drawLV()
+
+	# doDBSCAN.numberDistribution()
+	# doDBSCAN.drawCheckCloudsOneChannel()
+	#doDBSCAN.drawSpectraExample()
+
+	# doDBSCAN.drawVeDistribution(useGauss=True)
+	# doDBSCAN.drawPeakDistribution()
+
+	# doDBSCAN.areaDistribution()
+
+	#doDBSCAN.alphaDistribution()
+	# doDBSCAN.alphaDistribution( onlyLocal=True )
+
+	# doDBSCAN.fluxAlphaDistribution()
+	# doDBSCAN.fluxAlphaDistribution(onlyLocal=True)
+
+	# doDBSCAN.fluxDistribution()
+	# doDBSCAN.totaFluxDistribution()
+	#doDBSCAN.physicalAreaDistribution()
+
+	#doDBSCAN.physicalAreaDistributionLocal()
+
+	sys.exit()
+
+	pass
+
+
+
+
+if 0: #produdce catalogs
+	doDBSCAN = myDBSCAN()
+
+	#cont1
+	if 0:
+		dataPath="/home/qzyan/WORK/myDownloads/MWISPcloud/newDBSCAN/testAll/"
+		pathCon1="./catS2P4Con1/"
+		labelCon1=  dataPath+ "G2650LocaldbscanS2P4Con1_Clean.fits"
+		catCon1= dataPath+ "G2650LocaldbscanS2P4Con1_CleanWithLW.fit"
+		doDBSCAN.produceSingleCubesForEachCloud( labelCon1 , catCon1,savePath= pathCon1 )
+		sys.exit()
+
+	if 0:
+		dataPath="/home/qzyan/WORK/myDownloads/MWISPcloud/newDBSCAN/testAll/"
+		pathCon1="./catS2P8Con2/"
+		labelCon1=  dataPath+ "G2650LocaldbscanS2P8Con2_Clean.fits"
+		catCon1= dataPath+ "G2650LocaldbscanS2P8Con2_CleanWithLW.fit"
+		doDBSCAN.produceSingleCubesForEachCloud( labelCon1 , catCon1,savePath= pathCon1 )
+		sys.exit()
+
+	if 1:
+		dataPath="/home/qzyan/WORK/myDownloads/MWISPcloud/newDBSCAN/testAll/"
+		pathCon1="./catS2P11Con3/"
+		labelCon1=  dataPath+ "G2650LocaldbscanS2P11Con3_Clean.fits"
+		catCon1= dataPath+ "G2650LocaldbscanS2P11Con3_CleanWithLW.fit"
+		doDBSCAN.produceSingleCubesForEachCloud( labelCon1 , catCon1,savePath= pathCon1 )
+		sys.exit()
+
+
+
 if 0:
 
 	doDBSCAN = myDBSCAN()
@@ -6522,37 +6611,6 @@ if 0:
 
 
 
-
-# G2650Figures
-if 0:
-	doDBSCAN = myDBSCAN()
-	# doDBSCAN.drawOverallMoment()
-	doDBSCAN.drawLV()
-
-	# doDBSCAN.numberDistribution()
-	# doDBSCAN.drawCheckCloudsOneChannel()
-	#doDBSCAN.drawSpectraExample()
-
-	# doDBSCAN.drawVeDistribution(useGauss=True)
-	# doDBSCAN.drawPeakDistribution()
-
-	# doDBSCAN.areaDistribution()
-
-	#doDBSCAN.alphaDistribution()
-	# doDBSCAN.alphaDistribution( onlyLocal=True )
-
-	# doDBSCAN.fluxAlphaDistribution()
-	# doDBSCAN.fluxAlphaDistribution(onlyLocal=True)
-
-	# doDBSCAN.fluxDistribution()
-	# doDBSCAN.totaFluxDistribution()
-	#doDBSCAN.physicalAreaDistribution()
-
-	#doDBSCAN.physicalAreaDistributionLocal()
-
-	sys.exit()
-
-	pass
 
 
 

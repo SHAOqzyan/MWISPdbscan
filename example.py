@@ -2,10 +2,28 @@
 from onlyDBSCAN import allDBSCAN
 
 
+from mwispDBSCAN import MWISPDBSCAN
+
+
+
 doAllDBSCAN=allDBSCAN()
 
 
-if 1: # Q1subfits test
+
+if 1:
+    doMWdbscan = MWISPDBSCAN()
+    doMWdbscan.rawCOFITS="Q1Sub.fits"
+    doMWdbscan.averageRMS = 0.5
+
+    doMWdbscan.processPath="./testDataPath/"
+
+
+
+    doMWdbscan.computeDBSCAN()
+    doMWdbscan.getCatFromLabelArray(doClean=True)
+    doMWdbscan.produceCleanFITS()
+
+if 0: # Q1subfits test
     ############################################parameter setings
     #rawFITS="/home/qzyan/WORK/dataDisk/MWISP/G120/100_150_U.fits" #input raw coFITS
     #saveTag = "Q2test"  # your project code
@@ -37,7 +55,7 @@ if 1: # Q1subfits test
 
     doAllDBSCAN.rmsCO12= fitsRMS # K, set the rms
     doAllDBSCAN.setfastDBSCANrms(fitsRMS)
-    outputFITS,outputTable= doAllDBSCAN.pureDBSCAN(rawFITS, cutoff , MinPts=minPts, saveTag= saveTag , connectivity= contype , inputRMS=None, redo=True, keepFITSFile=True , has22=has22,peakSigma=peakSigma,minChannelN=minChannelN,minPixN=minPixN )
+    outputFITS,outputTable= doAllDBSCAN.pureDBSCAN(rawFITS, cutoff , MinPts=minPts, saveTag= saveTag , connectivity= contype , inputRMS=None, redo=True, keepFITSFile=True , peakSigma=peakSigma,minChannelN=minChannelN,minPixN=minPixN )
 
 
     if 1: # post selection

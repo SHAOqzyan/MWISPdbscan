@@ -283,6 +283,7 @@ class  MWISPDBSCAN(object):
             return self.labelFITSName[0:-5]+"_Clean.fit"
 
 
+
     def getCatFromLabelArray(self,doClean=True ):
         """
         Extract catalog from label fits, the minPix and rms is only used for saving
@@ -431,6 +432,13 @@ class  MWISPDBSCAN(object):
 
             # i would be the newID
             newID = GoodIDs[i]
+
+
+            if newID !=19: #debug why the largest cloud, wee lost
+                continue
+
+
+
             pixN = GoodCount[i]
 
             newRow = newTB[0]
@@ -452,8 +460,10 @@ class  MWISPDBSCAN(object):
             peak=coValues[peakIndex]
             # #criteria 2
 
+
             if peak < self.minPeakSigma * self.rmsData[peakB,peakL] and doClean:  #  accurate to lines
                 continue #do not consider the minimum peaks
+
 
 
             # #criteria 3, check consecutive channels
@@ -525,6 +535,9 @@ class  MWISPDBSCAN(object):
             newRow["peakB"] = peakB
             newRow["peakL"] = peakL
 
+            print peakV,peakB,peakL,"????????????????"
+
+
             # newRow["peak2"]= peak2
 
             newRow["sum"] = sumCO
@@ -548,6 +561,10 @@ class  MWISPDBSCAN(object):
 
             zeroProjection[projectIndex] = 0
             zeroProjectionExtend[0:-1, 0:-1] = zeroProjection
+
+
+
+
 
             pbar.update(i)
 
@@ -621,6 +638,110 @@ class  MWISPDBSCAN(object):
 
 
 
+    def produceCloudIntFITS(self,rawCOFITS,LabelCOFITS,tbFile, outputPath="./", minimumArea=54):
+        """
+        the minimum Area of 0.015 square deg = 54 square arcmin, is the largest cloud we coud perform distance examination
+
+        :param rawCOFITS:
+        :param LabelCOFITS:
+        :param tb:
+        :param minimumArea:
+        :return:
+        """
+
+        TB=Table.read(tbFile)
+
+        TB=TB[TB["area_exact"]>=minimumArea] #only select large angular size molecular clouds
+
+        TB.sort("area_exact")
+        TB.reverse()
+
+        dataCO,headCO=myFITS.readFITS(rawCOFITS)
+        coSpec0, vaxis0 = doFITS.getSpectraByIndex( dataCO,headCO,0,0 )
+
+        #Nz,Ny,Nx=dataCO.shape
+
+
+
+
+        dataCluster,headCluster=myFITS.readFITS( LabelCOFITS  )
+
+        ####################
+
+        clusterIndex1D = np.where(dataCluster > 0)
+        clusterValue1D = dataCluster[clusterIndex1D]
+        Z0, Y0, X0 = clusterIndex1D
+
+        velsolution = vaxis0[1]- vaxis0[0]
+
+        ################
+        projection0=np.zeros_like(dataCO[0])
+
+
+
+        widgets = ['Integrating cloud fits:', Percentage(), ' ', Bar(marker='0', left='[', right=']'), ' ', ETA(), ' ',   FileTransferSpeed()]  # see docs for other options
+
+        pbar = ProgressBar(widgets=widgets, maxval=len(TB))
+        pbar.start()
+        indexRun = 0
+
+        for eachDBRow in TB:
+            indexRun = indexRun + 1
+            pbar.update(indexRun)
+            cloudID = eachDBRow["_idx"]
+
+            cloudIndex = self.getIndices(Z0, Y0, X0, clusterValue1D, cloudID)
+            iz,iy,ix=cloudIndex
+
+            projectIndices=tuple( [iy,ix] )
+            ############ determine v range
+            centerV=eachDBRow["v_cen"]
+            dv=eachDBRow["v_rms"]
+            vRange= [centerV-dv*3, centerV+dv*3]
+            startV0,endVindex= self.getVindexRange(vaxis0, vRange )
+
+            cropCOCube=dataCO[startV0:endVindex+1]
+
+            sumCO=np.sum( cropCOCube, axis=0 )*velsolution
+
+            saveIntFITSname= os.path.join( outputPath , "Cloud{}_int.fits".format( cloudID  ) )
+            saveMaskFITSname= os.path.join( outputPath , "Cloud{}_mask.fits".format( cloudID  )  )
+
+
+
+            projection0[projectIndices] =1
+
+            fits.writeto(saveMaskFITSname, projection0, header=headCluster, overwrite=True)
+            fits.writeto(saveIntFITSname, sumCO, header=headCluster, overwrite=True)
+
+            projection0[projectIndices] =0
+
+            #zeroCluster[cloudIndex] = cloudID  # remove this cluster and do not record this cluster
+
+        pbar.finish()
+        #fits.writeto(saveCleanFITSName,returnCluster,header=headCluster,overwrite=True)
+
+
+
+
+    def getVindexRange(self,vaxis,vRange):
+        """
+
+        :param vaxis:
+        :param vRange:
+        :return:
+        """
+
+        minValue = min( vRange )
+        maxValue = max( vRange )
+
+        indexV0=doFITS.find_nearestIndex(vaxis,minValue)
+        indexV1=doFITS.find_nearestIndex(vaxis,maxValue)
+
+        return [indexV0, indexV1]
+
+
+
     def produceCleanFITS(self):
         """
         remove noise cluster according to the label fits and catFITS name
@@ -679,3 +800,5 @@ class  MWISPDBSCAN(object):
         self.cleanFITSName=saveCleanFITSName
         return saveCleanFITSName
 
+    def ZZZ(self):
+        pass

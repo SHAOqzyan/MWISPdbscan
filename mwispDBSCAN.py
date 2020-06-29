@@ -433,12 +433,6 @@ class  MWISPDBSCAN(object):
             # i would be the newID
             newID = GoodIDs[i]
 
-
-            if newID !=19: #debug why the largest cloud, wee lost
-                continue
-
-
-
             pixN = GoodCount[i]
 
             newRow = newTB[0]
@@ -510,7 +504,7 @@ class  MWISPDBSCAN(object):
             # area_accurate=np.sum( np.cos( np.deg2rad(BS2D) )    )*0.25
             # newRow["area_accurate"]= area_accurate
 
-            sumCO = np.sum(coValues)
+            sumCO = np.sum(coValues,dtype=np.float64) #float32 is not enough for large molecular clouds
 
             Vcen, Vrms = doFITS.weighted_avg_and_std(cloudV, coValues)
             Bcen, Brms = doFITS.weighted_avg_and_std(cloudB, coValues)
@@ -534,8 +528,6 @@ class  MWISPDBSCAN(object):
             newRow["peakV"] = peakV
             newRow["peakB"] = peakB
             newRow["peakL"] = peakL
-
-            print peakV,peakB,peakL,"????????????????"
 
 
             # newRow["peak2"]= peak2
@@ -561,8 +553,6 @@ class  MWISPDBSCAN(object):
 
             zeroProjection[projectIndex] = 0
             zeroProjectionExtend[0:-1, 0:-1] = zeroProjection
-
-
 
 
 
@@ -702,7 +692,7 @@ class  MWISPDBSCAN(object):
 
             cropCOCube=dataCO[startV0:endVindex+1]
 
-            sumCO=np.sum( cropCOCube, axis=0 )*velsolution
+            sumCO=np.sum( cropCOCube, axis=0,dtype=float )*velsolution
 
             saveIntFITSname= os.path.join( outputPath , "Cloud{}_int.fits".format( cloudID  ) )
             saveMaskFITSname= os.path.join( outputPath , "Cloud{}_mask.fits".format( cloudID  )  )
@@ -770,7 +760,7 @@ class  MWISPDBSCAN(object):
         TB=Table.read(targetTBFile)
         dataCluster,headCluster=doFITS.readFITS(self.labelFITSName)
         noiseLabel = np.min(dataCluster[0])
-        clusterIndex1D = np.where(dataCluster > 0)
+        clusterIndex1D = np.where(dataCluster > noiseLabel )
         clusterValue1D = dataCluster[clusterIndex1D]
         Z0, Y0, X0 = clusterIndex1D
 

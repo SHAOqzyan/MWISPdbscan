@@ -302,6 +302,19 @@ class  MWISPDBSCAN(object):
             return
 
         dataCluster, headCluster = myFITS.readFITS(self.labelFITSName)
+
+
+        #calculate the area of one pixel
+
+        sizeL=  headCluster["CDELT1"]*60
+        sizeB= headCluster["CDELT2"]*60
+
+        sizeB=abs(sizeB) #in arcmin
+        sizeL=abs(sizeL) #in arcmin
+
+        pixelArea= sizeB*sizeL
+
+
         Nz, Ny, Nx = dataCluster.shape
 
         if self.rawCOFITS is None:
@@ -515,7 +528,7 @@ class  MWISPDBSCAN(object):
             # LBcore = zip(cloudB, cloudL)
             # pixelsN= {}.fromkeys(LBcore).keys() #len( set(LBcore) )
             # area_exact=len(pixelsN)*0.25 #arc mins square
-            area_exact = np.sum(zeroProjection) * 0.25
+            area_exact = np.sum(zeroProjection) * pixelArea  
 
             newRow["area_exact"] = area_exact
 

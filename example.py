@@ -6,6 +6,7 @@ doMWdbscan= MWISPDBSCAN()
 
 
 if 1: #an example
+    #rawCOFITS = "../fcrao_rep_m.fits"
     rawCOFITS = "Q1Sub.fits"
 
     doMWdbscan.rawCOFITS =  rawCOFITS
@@ -19,4 +20,4 @@ if 1: #an example
     doMWdbscan.getCatFromLabelArray(doClean=True) #by cleaning, we remove noise clusters
     doMWdbscan.produceCleanFITS()
 
-
+    doMWdbscan.produceMask(doMWdbscan.rawCOFITS, doMWdbscan.cleanFITSName) # labelFITSName may be none if the computeDBSCAN() dot no process, you need to

@@ -528,7 +528,7 @@ class  MWISPDBSCAN(object):
             # LBcore = zip(cloudB, cloudL)
             # pixelsN= {}.fromkeys(LBcore).keys() #len( set(LBcore) )
             # area_exact=len(pixelsN)*0.25 #arc mins square
-            area_exact = np.sum(zeroProjection) * pixelArea  
+            area_exact = np.sum(zeroProjection) * pixelArea
 
             newRow["area_exact"] = area_exact
 
@@ -802,6 +802,36 @@ class  MWISPDBSCAN(object):
 
         self.cleanFITSName=saveCleanFITSName
         return saveCleanFITSName
+
+
+    def produceMask(self,COFITS,labelFITS,outFITS=None):
+        """
+        produce a masked COFITS, with labelsFITS
+        :param COFITS:
+        :param labelFITS:
+        :return:
+        """
+
+
+        dataCO,headCO =doFITS.readFITS(COFITS)
+
+        dataLabel,headLabel=doFITS.readFITS(labelFITS)
+
+
+        noiseLabel=np.min(dataLabel[0])
+
+
+        if outFITS is None:
+            outFITS="mask_"+COFITS
+
+
+        #maskCO
+        dataCO[dataLabel==noiseLabel] = np.nan
+
+        fits.writeto(outFITS,dataCO,header=headCO,overwrite=True)
+
+
+
 
     def ZZZ(self):
         pass

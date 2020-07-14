@@ -25,4 +25,3 @@ if 1: #an example
 
 
     doMWdbscan.produceIndividualClouds( doMWdbscan.rawCOFITS, doMWdbscan.cleanFITSName ,doMWdbscan.cleanCatName  )
-    doMWdbscan.produceMask(doMWdbscan.rawCOFITS, doMWdbscan.cleanFITSName) # labelFITSName may be none if the computeDBSCAN() dot no process, you need to

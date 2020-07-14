@@ -830,8 +830,67 @@ class  MWISPDBSCAN(object):
 
         fits.writeto(outFITS,dataCO,header=headCO,overwrite=True)
 
+    def produceIndividualClouds(self, rawCOFITS, labelsFITS, cloudTBFile, savePath="./cloudSubCubes/" ,noiseMask=0 ):
+        """
+
+        #output all data cubes for each cloud
+
+        :return:
+        """
+
+        #################
+
+        # savePath=""
+
+        if os.path.isdir(savePath):
+            pass
+        else:
+            os.makedirs(savePath)
 
 
+        cloudTB = Table.read(cloudTBFile)
+
+        # cloudTB=self.removeWrongEdges(cloudTB)
+        print len(cloudTB), "Number of molecular clouds"
+
+        dataCluster, headCluster = myFITS.readFITS(labelsFITS)
+        dataCO, headCO = myFITS.readFITS( rawCOFITS )
+        # print cloudTB
+
+        minV = np.nanmin(dataCluster[0])
+        wcsCloud = WCS(headCluster)
+        clusterIndex1D = np.where(dataCluster > minV)
+        clusterValue1D = dataCluster[clusterIndex1D]
+        Z0, Y0, X0 = clusterIndex1D
+
+        fitsZero = np.zeros_like(dataCluster)
+        fitsZero=fitsZero+noiseMask
+         # print cloudTB.colnames
+        for eachC in cloudTB:
+            cloudID = eachC["_idx"]
+            saveName = "cloud{}cube.fits".format(cloudID)
+
+            cloudIndex = self.getIndices(Z0, Y0, X0, clusterValue1D, cloudID)
+            fitsZero[cloudIndex] = dataCO[cloudIndex]
+
+            cloudZ0, cloudY0, cloudX0 = cloudIndex
+
+            minZ = np.min(cloudZ0)
+            maxZ = np.max(cloudZ0)
+
+            minY = np.min(cloudY0)
+            maxY = np.max(cloudY0)
+
+            minX = np.min(cloudX0)
+            maxX = np.max(cloudX0)
+
+            cropWCS = wcsCloud[minZ:maxZ + 1, minY:maxY + 1, minX:maxX + 1]
+
+            cropData = fitsZero[minZ:maxZ + 1, minY:maxY + 1, minX:maxX + 1]
+
+            fits.writeto(savePath + saveName, cropData, header=cropWCS.to_header(), overwrite=True)
+
+            fitsZero[:] =  noiseMask
 
     def ZZZ(self):
         pass

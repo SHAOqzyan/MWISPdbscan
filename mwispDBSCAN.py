@@ -249,20 +249,36 @@ class  MWISPDBSCAN(object):
         labeled_array = labeled_core
 
 
-        saveTag = self.getDBSCANTag( )
 
         print num_features, "features found!"
 
-
-
-        baseName  =  os.path.basename( self.rawCOFITS )
-
-        saveLabelFITSName= os.path.join(self.processPath,baseName[0:-5]+saveTag+".fits")
-
+        saveLabelFITSName=self.getLabelFITSName()
         fits.writeto(  saveLabelFITSName , labeled_array, header=COHead, overwrite=True)
         self.labelFITSName=saveLabelFITSName
 
         return saveLabelFITSName
+
+
+
+    def getLabelFITSName(self, doClean=False):
+        """
+        used to get the DBSCAN label fits name, when you do not want to rerun the DBSCAN process
+        :return:
+        """
+        baseName  =  os.path.basename( self.rawCOFITS )
+        saveTag = self.getDBSCANTag( )
+
+
+        if doClean:
+
+            saveLabelFITSName= os.path.join(self.processPath,baseName[0:-5]+saveTag+"_Clean.fits")
+
+        else:
+            saveLabelFITSName= os.path.join(self.processPath,baseName[0:-5]+saveTag+".fits")
+
+
+        return saveLabelFITSName
+
 
     def getIndices(self, Z0, Y0, X0, values1D, choseID):
 
@@ -274,13 +290,19 @@ class  MWISPDBSCAN(object):
 
         return tuple([cZ0, cY0, cX0])
 
-    def getSaveCatName(self,doClean=True):
+    def getSaveCatName(self,doClean=False):
+
+
+        processLabelFITSName=self.labelFITSName
+
+        if processLabelFITSName is None:
+            processLabelFITSName=self.getLabelFITSName(doClean=False)
 
         if not doClean: # _Clean.fit
-            return self.labelFITSName[0:-1]
+            return processLabelFITSName[0:-1]
 
         else:
-            return self.labelFITSName[0:-5]+"_Clean.fit"
+            return processLabelFITSName[0:-5]+"_Clean.fit"
 
 
 

@@ -4,7 +4,7 @@ from mwispDBSCAN import MWISPDBSCAN
 doMWdbscan= MWISPDBSCAN()
 
 
-def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5):
+def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5,processPath="./"):
 
     #rawCOFITS = "../fcrao_rep_m.fits"
     rawCOFITS =  rawCOFITS #"Q1Sub.fits"
@@ -14,7 +14,9 @@ def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5):
     doMWdbscan.averageRMS =averageRMS # if you do not have an rm fits file, use an average rms
 
     doMWdbscan.setDBSCANParameters( cutoff_sigma=2,minPts=4,connectivity= 1 )
-    doMWdbscan.processPath = './'
+    doMWdbscan.processPath =  processPath
+
+    doMWdbscan.setCatalogSelectionCriteria( minVox=16,minChannel=3,hasBeam=1,minPeakSigma=5)
 
     doMWdbscan.computeDBSCAN()
     doMWdbscan.getCatFromLabelArray(doClean=True) #by cleaning, we remove noise clusters
@@ -26,4 +28,21 @@ def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5):
     #doMWdbscan.produceIndividualClouds( doMWdbscan.rawCOFITS, doMWdbscan.cleanFITSName ,doMWdbscan.cleanCatName  )
 
 
-if 1: #an example
+if 0: #an example
+
+    pipeLine("Q1Sub.fits",averageRMS=0.5)
+
+
+if 0: #an example for only produceIndividualCLouds
+
+    rawCOFITS =  "Q1Sub.fits" #"Q1Sub.fits"
+
+    doMWdbscan.rawCOFITS =  rawCOFITS
+    doMWdbscan.rmsFITS = None #you can provde rms fits if you hae one
+    doMWdbscan.averageRMS =0.5 # if you do not have an rm fits file, use an average rms
+
+    doMWdbscan.setDBSCANParameters( cutoff_sigma=2,minPts=4,connectivity= 1 )
+    doMWdbscan.processPath =  "./"
+
+    #cloudSubCubes
+    doMWdbscan.produceIndividualClouds( doMWdbscan.rawCOFITS, doMWdbscan.getLabelFITSName(doClean=True) ,doMWdbscan.getSaveCatName(doClean=True)  )

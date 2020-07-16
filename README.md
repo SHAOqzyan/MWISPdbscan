@@ -13,7 +13,7 @@ Paper Link:  https://ui.adsabs.harvard.edu/abs/2020arXiv200613654Y
 # V1.
 example.py
 
-Please make sure the example.py file run correctly, and see the DBSCAN results in DBSCANresults path
+Please make sure the example.py file run correctly
 
-You may need to install lots of python packages, which are also useless to the DBSCAN.
+You may need to install lots of python packages.
 

@@ -18,7 +18,11 @@ def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5,processPath="./"):
 
     doMWdbscan.setCatalogSelectionCriteria( minVox=16,minChannel=3,hasBeam=1,minPeakSigma=5)
 
-    doMWdbscan.computeDBSCAN()
+
+    dataRMs,headRMs=myFITS.readFITS(rmsFITS)
+    doMWdbscan.rmsData=dataRMs
+    #doMWdbscan.computeDBSCAN()
+    doMWdbscan.labelFITSName= doMWdbscan.getLabelFITSName()
     doMWdbscan.getCatFromLabelArray(doClean=True) #by cleaning, we remove noise clusters
     doMWdbscan.produceCleanFITS()
 
@@ -28,9 +32,12 @@ def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5,processPath="./"):
     #doMWdbscan.produceIndividualClouds( doMWdbscan.rawCOFITS, doMWdbscan.cleanFITSName ,doMWdbscan.cleanCatName  )
 
 
-if 0: #an example
 
-    pipeLine("Q1Sub.fits",averageRMS=0.5)
+
+if 1: #an example
+
+    #pipeLine("Q1Sub.fits",averageRMS=0.5)
+    pipeLine("sub1.fits", rmsFITS="sub1_rms.fits")
 
 
 if 0: #an example for only produceIndividualCLouds

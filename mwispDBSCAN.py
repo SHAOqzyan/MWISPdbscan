@@ -198,6 +198,10 @@ class  MWISPDBSCAN(object):
 
         COdata, COHead= doFITS.readFITS( self.rawCOFITS )
 
+
+        if len(COdata)==4:
+            COdata=COdata[0]
+
         Nz, Ny, Nx = COdata.shape
 
 
@@ -369,7 +373,7 @@ class  MWISPDBSCAN(object):
 
 
 
-        wcsCloud = WCS(headCluster)
+        wcsCloud = WCS(headCluster,naxis=3)
 
         clusterIndex1D = np.where(dataCluster > minV)
         clusterValue1D = dataCluster[clusterIndex1D]

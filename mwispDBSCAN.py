@@ -884,7 +884,7 @@ class  MWISPDBSCAN(object):
         # print cloudTB
 
         minV = np.nanmin(dataCluster[0])
-        wcsCloud = WCS(headCluster)
+        wcsCloud = WCS(headCluster,naxis=3)
         clusterIndex1D = np.where(dataCluster > minV)
         clusterValue1D = dataCluster[clusterIndex1D]
         Z0, Y0, X0 = clusterIndex1D

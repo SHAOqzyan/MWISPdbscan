@@ -21,7 +21,7 @@ def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5,processPath="./"):
 
     dataRMs,headRMs=myFITS.readFITS(rmsFITS)
     doMWdbscan.rmsData=dataRMs
-    #doMWdbscan.computeDBSCAN()
+    doMWdbscan.computeDBSCAN()
     doMWdbscan.labelFITSName= doMWdbscan.getLabelFITSName()
     doMWdbscan.getCatFromLabelArray(doClean=True) #by cleaning, we remove noise clusters
     doMWdbscan.produceCleanFITS()
@@ -34,7 +34,7 @@ def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5,processPath="./"):
 
 
 
-if 1: #an example
+if 0: #an example
 
     #pipeLine("Q1Sub.fits",averageRMS=0.5)
     pipeLine("sub1.fits", rmsFITS="sub1_rms.fits")

@@ -199,7 +199,7 @@ class  MWISPDBSCAN(object):
         COdata, COHead= doFITS.readFITS( self.rawCOFITS )
 
 
-        if len(COdata)==4:
+        if len(COdata.shape)==4:
             COdata=COdata[0]
 
         Nz, Ny, Nx = COdata.shape

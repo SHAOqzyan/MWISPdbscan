@@ -199,7 +199,7 @@ class  MWISPDBSCAN(object):
         COdata, COHead= doFITS.readFITS( self.rawCOFITS )
 
 
-        if len(COdata)==4:
+        if len(COdata.shape)==4:
             COdata=COdata[0]
 
         Nz, Ny, Nx = COdata.shape
@@ -349,6 +349,14 @@ class  MWISPDBSCAN(object):
             return
 
         dataCO, headCO = myFITS.readFITS(self.rawCOFITS)
+
+
+        print dataCO.shape,"??????????????????"
+
+
+        if len(dataCO.shape)==4:
+            dataCO=dataCO[0]
+
 
         if self.averageRMS is not None and self.rawCOFITS is not None:
 

@@ -34,13 +34,13 @@ def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5,processPath="./"):
 
 
 
-if 0: #an example
+if 1: #an example
 
-    #pipeLine("Q1Sub.fits",averageRMS=0.5)
-    pipeLine("sub1.fits", rmsFITS="sub1_rms.fits")
+    pipeLine("B6_CO_vel20_br05.fits",averageRMS=0.0007)
+    #pipeLine("sub1.fits", rmsFITS="sub1_rms.fits")
 
 
-if 1: #an example for only produceIndividualCLouds
+if 0: #an example for only produceIndividualCLouds
 
     rawCOFITS =  "Q1Sub.fits" #"Q1Sub.fits"
 

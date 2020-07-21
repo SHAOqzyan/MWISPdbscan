@@ -877,7 +877,7 @@ class  MWISPDBSCAN(object):
         cloudTB = Table.read(cloudTBFile)
 
         # cloudTB=self.removeWrongEdges(cloudTB)
-        print len(cloudTB), "Number of molecular clouds"
+        print len(cloudTB), " molecular clouds in total."
 
         dataCluster, headCluster = myFITS.readFITS(labelsFITS)
         dataCO, headCO = myFITS.readFITS( rawCOFITS )
@@ -917,6 +917,6 @@ class  MWISPDBSCAN(object):
             fits.writeto(savePath + saveName, cropData, header=cropWCS.to_header(), overwrite=True)
 
             fitsZero[:] =  noiseMask
-
+        print "Cloud fits writing done!"
     def ZZZ(self):
         pass

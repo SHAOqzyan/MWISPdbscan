@@ -351,9 +351,6 @@ class  MWISPDBSCAN(object):
         dataCO, headCO = myFITS.readFITS(self.rawCOFITS)
 
 
-        print dataCO.shape,"??????????????????"
-
-
         if len(dataCO.shape)==4:
             dataCO=dataCO[0]
 

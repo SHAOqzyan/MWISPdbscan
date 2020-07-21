@@ -40,7 +40,7 @@ if 0: #an example
     pipeLine("sub1.fits", rmsFITS="sub1_rms.fits")
 
 
-if 0: #an example for only produceIndividualCLouds
+if 1: #an example for only produceIndividualCLouds
 
     rawCOFITS =  "Q1Sub.fits" #"Q1Sub.fits"
 

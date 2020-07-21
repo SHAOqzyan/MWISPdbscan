@@ -199,7 +199,7 @@ class  MWISPDBSCAN(object):
         COdata, COHead= doFITS.readFITS( self.rawCOFITS )
 
 
-        if len(COdata.shape)==4:
+        if len(COdata)==4:
             COdata=COdata[0]
 
         Nz, Ny, Nx = COdata.shape
@@ -889,8 +889,8 @@ class  MWISPDBSCAN(object):
         clusterValue1D = dataCluster[clusterIndex1D]
         Z0, Y0, X0 = clusterIndex1D
 
-        fitsZero = np.zeros_like(dataCluster)
-        fitsZero=fitsZero+noiseMask
+        fitsZero = np.zeros_like(dataCluster,dtype=np.float64)
+        fitsZero=fitsZero+noiseMask 
          # print cloudTB.colnames
         for eachC in cloudTB:
             cloudID = eachC["_idx"]

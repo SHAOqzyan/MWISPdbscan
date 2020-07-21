@@ -18,9 +18,9 @@ def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5,processPath="./"):
 
     doMWdbscan.setCatalogSelectionCriteria( minVox=16,minChannel=3,hasBeam=1,minPeakSigma=5)
 
-
-    dataRMs,headRMs=myFITS.readFITS(rmsFITS)
-    doMWdbscan.rmsData=dataRMs
+    #if rmsFITS is not None:
+    #dataRMs,headRMs=myFITS.readFITS(rmsFITS)
+    #doMWdbscan.rmsData=dataRMs
     doMWdbscan.computeDBSCAN()
     doMWdbscan.labelFITSName= doMWdbscan.getLabelFITSName()
     doMWdbscan.getCatFromLabelArray(doClean=True) #by cleaning, we remove noise clusters

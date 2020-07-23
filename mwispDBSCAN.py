@@ -308,7 +308,50 @@ class  MWISPDBSCAN(object):
         else:
             return processLabelFITSName[0:-5]+"_Clean.fit"
 
+    def rmsmap(self, outPUT=None, overwrite=True):
+        """
+        3d rms
+        :param outPUT:
+        :param overwrite:
+        :return:
+        """
 
+        if self.rawCOFITS is None:
+            print "rawCOFITS need to be provided, stoping..."
+            return
+
+        COdata, COHead = doFITS.readFITS(self.rawCOFITS)
+
+        if len(COdata.shape) == 4:
+            COdata = COdata[0]
+
+        if outPUT is None:
+            writeName = "rmsmap.fits"
+
+        else:
+            writeName = outPUT
+
+        fileExist = os.path.isfile(writeName)
+
+        if overwrite and fileExist:
+            os.remove(writeName)
+
+        Nz, Ny, Nx = COdata.shape
+
+
+        rmsData = np.zeros_like(COdata, dtype=np.float32)
+
+        for i in range(Nz):
+            channelI = COdata[i]
+            negativeValues = channelI[channelI < 0]
+
+            sigma = np.std(negativeValues) / np.sqrt(1 - 2. / np.pi)
+
+            print sigma
+            rmsData[i, :, :] = sigma
+
+        fits.writeto(writeName, rmsData, header=COHead)
+        return fits.open(writeName)[0]
 
     def getCatFromLabelArray(self,doClean=True ):
         """
@@ -498,8 +541,15 @@ class  MWISPDBSCAN(object):
             peak=coValues[peakIndex]
             # #criteria 2
 
+            peakSimga=3
 
-            if peak < self.minPeakSigma * self.rmsData[peakB,peakL] and doClean:  #  accurate to lines
+            if len(self.rmsData.shape)==2:
+                peakSimga =  self.minPeakSigma * self.rmsData[peakB,peakL]
+            if len(self.rmsData.shape)==3:
+                peakSimga =  self.minPeakSigma * self.rmsData[peakV,peakB,peakL]
+
+
+            if peak <  peakSimga and doClean:  #  accurate to lines
                 continue #do not consider the minimum peaks
 
 

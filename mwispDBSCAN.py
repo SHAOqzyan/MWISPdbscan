@@ -541,7 +541,7 @@ class  MWISPDBSCAN(object):
             peak=coValues[peakIndex]
             # #criteria 2
 
-            peakSimga=3
+            peakSimga=0
 
             if len(self.rmsData.shape)==2:
                 peakSimga =  self.minPeakSigma * self.rmsData[peakB,peakL]
@@ -722,7 +722,7 @@ class  MWISPDBSCAN(object):
 
 
 
-    def produceCloudIntFITS(self,rawCOFITS,LabelCOFITS,tbFile, outputPath="./", minimumArea=54):
+    def produceCloudIntFITS(self,rawCOFITS,LabelCOFITS,tbFile, outputPath="./cloudIntPath",  useTB=False, pureInt=False, foreground=False):
         """
         the minimum Area of 0.015 square deg = 54 square arcmin, is the largest cloud we coud perform distance examination
 
@@ -732,10 +732,11 @@ class  MWISPDBSCAN(object):
         :param minimumArea:
         :return:
         """
-
-        TB=Table.read(tbFile)
-
-        TB=TB[TB["area_exact"]>=minimumArea] #only select large angular size molecular clouds
+        if not useTB:
+            TB=Table.read(tbFile)
+        else:
+            TB=tbFile
+        #TB=TB[TB["area_exact"]>=minimumArea] #only select large angular size molecular clouds
 
         TB.sort("area_exact")
         TB.reverse()
@@ -769,6 +770,9 @@ class  MWISPDBSCAN(object):
         pbar.start()
         indexRun = 0
 
+
+        zeroCube = np.zeros_like(dataCluster, dtype=np.float32 )
+
         for eachDBRow in TB:
             indexRun = indexRun + 1
             pbar.update(indexRun)
@@ -786,19 +790,45 @@ class  MWISPDBSCAN(object):
 
             cropCOCube=dataCO[startV0:endVindex+1]
 
-            sumCO=np.sum( cropCOCube, axis=0,dtype=float )*velsolution
 
-            saveIntFITSname= os.path.join( outputPath , "Cloud{}_int.fits".format( cloudID  ) )
             saveMaskFITSname= os.path.join( outputPath , "Cloud{}_mask.fits".format( cloudID  )  )
+            savePureIntFITSname= os.path.join( outputPath , "Cloud{}_PureInt.fits".format( cloudID  ) )
+            #produce pureint
 
-
-
-            projection0[projectIndices] =1
-
-            fits.writeto(saveMaskFITSname, projection0, header=headCluster, overwrite=True)
+            ###int fits
+            sumCO=np.sum( cropCOCube, axis=0,dtype=float )*velsolution
+            saveIntFITSname= os.path.join( outputPath , "Cloud{}_int.fits".format( cloudID  ) )
             fits.writeto(saveIntFITSname, sumCO, header=headCluster, overwrite=True)
 
+            ##mask fits
+            projection0[projectIndices] =1
+            fits.writeto(saveMaskFITSname, projection0, header=headCluster, overwrite=True)
+
+            ##foreground fits
+
+            if foreground: #the way of generating foreground fits is different, the following code is used to produce foreground fits for Q2
+                foreCOCube = dataCO[endVindex + 1:]
+
+                sumForeground =   np.sum( foreCOCube , axis=0,dtype=float )*velsolution
+
+                saveForeGroundFITSname= os.path.join( outputPath , "Cloud{}_fore.fits".format( cloudID  ) )
+                fits.writeto(saveForeGroundFITSname, sumForeground, header=headCluster, overwrite=True)
+
+
+            if pureInt: #usually do no use this
+                startV0=min(iz)
+                endV0= max(iz)
+
+                zeroCube[cloudIndex] = dataCO[cloudIndex]
+                cropCOCubePure=zeroCube[startV0:endV0+1]
+
+
+                sumCOPure = np.sum(cropCOCubePure, axis=0, dtype=float) * velsolution
+                fits.writeto(savePureIntFITSname, sumCOPure, header=headCluster, overwrite=True)
+
+
             projection0[projectIndices] =0
+            zeroCube[cloudIndex] =  0
 
             #zeroCluster[cloudIndex] = cloudID  # remove this cluster and do not record this cluster
 

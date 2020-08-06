@@ -33,8 +33,14 @@ def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5,processPath="./"):
 
 if 1: #an example
 
-
     pipeLine("Q1Sub.fits", averageRMS=0.5)
+
+
+
+if 0:
+    #doMWdbscan.produceIndividualClouds( "Q1Sub.fits", "Q1SubdbscanS2P4Con1_Clean.fits", "Q1SubdbscanS2P4Con1_Clean.fit"  )
+
+    doMWdbscan.produceCloudIntFITS( "Q1Sub.fits", "Q1SubdbscanS2P4Con1_Clean.fits", "Q1SubdbscanS2P4Con1_Clean.fit",outputPath="./cloudIntPath", foreground=True  )
 
 
 if 0: #an example for only produceIndividualCLouds

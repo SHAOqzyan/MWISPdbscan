@@ -1050,7 +1050,8 @@ class  MWISPDBSCAN(object):
         try:
             filterTB["lineWidth"] = filterTB["v_rms"]
         except:
-            pass
+            filterTB["lineWidth"] = filterTB["vlsr"]
+
 
 
         i = 0

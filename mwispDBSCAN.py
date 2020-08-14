@@ -1003,5 +1003,109 @@ class  MWISPDBSCAN(object):
 
             fitsZero[:] =  noiseMask
         print "Cloud fits writing done!"
+
+
+    def getEquivalentLinewidth(self,labelFITSName, inputTBFile ,saveSpectral=False):
+        """
+        add a colnames of linewidth to the inputTB
+        :param inputTB:
+        :return:
+        """
+
+        #first read label and CO data
+        dataCluster,headCluster=myFITS.readFITS( labelFITSName)
+        dataCO,headCO= myFITS.readFITS( self.rawCOFITS   )
+
+
+        filterTB= Table.read(inputTBFile)  # remove unrelated sources  #self.selectTB(rawTB)
+
+        cubeCO = SpectralCube.read( labelFITSName )
+        vAxis = cubeCO.spectral_axis
+
+
+        vAxis = vAxis.value / 1000.  # convert to rms
+
+        noiseV = np.nanmin(dataCluster[0])
+        index1D = np.where(dataCluster > noiseV)
+        values1D = dataCluster[index1D]
+
+        Z0, Y0, X0 = index1D
+
+        dataZero = np.zeros_like(dataCluster)
+
+        widgets = ['Geting line equivalent width: ', Percentage(), ' ', Bar(marker='0', left='[', right=']'), ' ', ETA(), ' ',
+                   FileTransferSpeed()]  # see docs for other options
+        pbar = ProgressBar(widgets=widgets, maxval=len(filterTB))
+        pbar.start()
+
+        try:
+            filterTB["lineWidth"] = filterTB["v_rms"]
+        except:
+            pass
+
+
+        i = 0
+        for eachR in filterTB:
+
+            testID = int(eachR["_idx"])
+
+
+            testIndices = self.getIndices(Z0, Y0, X0, values1D, testID)
+            singleZ0, singleY0, singleX0 = testIndices
+
+            dataZero[testIndices] = dataCO[testIndices]
+
+            # cropThe cloudRange
+            minY = np.min(singleY0)
+            maxY = np.max(singleY0)
+            ###########
+            minX = np.min(singleX0)
+            maxX = np.max(singleX0)
+
+            ###########
+            minZ = np.min(singleZ0)
+            maxZ = np.max(singleZ0)
+
+            #########
+
+            cloudCropSpectra = dataZero[:, minY:maxY + 1, minX:maxX + 1]
+
+            cloudCropCube = dataZero[minZ:maxZ + 1, minY:maxY + 1, minX:maxX + 1]
+
+            averageSpectraCrop = np.nansum(cloudCropSpectra, axis=(1, 2))
+
+            intCloud = np.nansum(cloudCropCube, axis=0)
+
+            # count the number spectra
+
+            totalSpectral = len(intCloud[intCloud > 0])
+
+            meanSpectral = averageSpectraCrop / 1. / totalSpectral
+
+            if saveSpectral:
+                savefileName = saveSpectralPath + "{}_{}Spectral".format(regionName, testID)
+
+                np.save(savefileName, [vAxis, meanSpectral])
+
+
+            spectraPeak = np.max(meanSpectral)
+
+            area = (vAxis[1] - vAxis[0]) * np.sum(meanSpectral)
+
+            eqLineWidth = area / spectraPeak
+            dataZero[testIndices] = 0
+
+            eachR["lineWidth"] = eqLineWidth
+
+            #lineWdith.append(eqLineWidth)
+
+            i = i + 1
+
+            pbar.update(i)
+
+        pbar.finish()
+
+        saveTBAs=  inputTBFile[0:-5]+"_LW.fit"
+        filterTB.write(saveTBAs, overwrite=True)
     def ZZZ(self):
         pass

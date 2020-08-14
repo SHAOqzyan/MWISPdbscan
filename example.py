@@ -30,8 +30,13 @@ def pipeLine(rawCOFITS,rmsFITS=None,averageRMS=0.5,processPath="./"):
 
     #doMWdbscan.produceIndividualClouds( doMWdbscan.rawCOFITS, doMWdbscan.cleanFITSName ,doMWdbscan.cleanCatName  )
 
+if 1:
+    rawCOFITS =  "Q1Sub.fits" #"Q1Sub.fits"
 
-if 1: #an example
+    doMWdbscan.rawCOFITS =  rawCOFITS
+
+    doMWdbscan.getEquivalentLinewidth( "Q1SubdbscanS2P4Con1_Clean.fits", "Q1SubdbscanS2P4Con1_Clean.fit")
+if 0: #an example
 
     pipeLine("Q1Sub.fits", averageRMS=0.5)
 

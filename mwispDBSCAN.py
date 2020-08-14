@@ -1004,6 +1004,15 @@ class  MWISPDBSCAN(object):
             fitsZero[:] =  noiseMask
         print "Cloud fits writing done!"
 
+    def getCloudIDByRow(self, eachC):
+
+
+        if "_idx" in eachC.colnames:
+            return eachC["_idx"]
+        else:
+            cloudName = eachC["sourceName"]
+            id = cloudName.split("Cloud")[-1]
+            return int(id)
 
     def getEquivalentLinewidth(self,labelFITSName, inputTBFile ,saveSpectral=False):
         """
@@ -1047,7 +1056,7 @@ class  MWISPDBSCAN(object):
         i = 0
         for eachR in filterTB:
 
-            testID = int(eachR["_idx"])
+            testID =  self.getCloudIDByRow( eachR )
 
 
             testIndices = self.getIndices(Z0, Y0, X0, values1D, testID)

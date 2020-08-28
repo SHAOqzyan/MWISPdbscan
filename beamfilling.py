@@ -876,7 +876,7 @@ class myBFF(object):
         self.addCutFFColnames(cleanTB)
         ##get flux
 
-        self.getSmoothFluxColCutoff(rawCOFITS,labelFITS,cleanTB,rmsFITS=rmsFITS)\
+        self.getSmoothFluxColCutoff(rawCOFITS,labelFITS,cleanTB,rmsFITS=rmsFITS)
 
 
         self.addMWISPFFerrorCutoff(cleanTB,dim=5)

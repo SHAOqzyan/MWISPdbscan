@@ -919,6 +919,12 @@ class myBFF(object):
 
 
 doFF=myBFF()
+
+doFF.getBFFcutoff(  "/T620/ysu/t40160/mosaic_U02.fits", "mosaic_U02dbscanS2P4Con1_Clean.fits",  "mosaic_U02dbscanS2P4Con1_Clean.fit",   rmsFITS="/T620/ysu/t40160/mosaic_U02_rms.fits" )
+
+
+
+
 doFF.recalCulateBFF("mosaic_U02dbscanS2P4Con1_Clean_BFF.fit", rmsFITS="/T620/ysu/t40160/mosaic_U02_rms.fits",velResolution=0.2 )
 doFF.recalCulateBFF("mosaic_L02dbscanS2P4Con1_Clean_BFF.fit", rmsFITS="/T620/ysu/t40160/mosaic_L02_rms.fits",velResolution=0.2 )
 

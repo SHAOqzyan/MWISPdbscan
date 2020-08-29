@@ -564,6 +564,8 @@ class myBFF(object):
             fluxList.append(row[colName])  # the flux is already K km/s
             totalVox = row[colPixName]
 
+
+
             totalVox = max([1, totalVox])  # assign 1 pixel error to 0 flux
 
             eRRor = np.sqrt(totalVox) * self.meanRMS * self.velres
@@ -885,11 +887,41 @@ class myBFF(object):
         #
         #step2, get flux
 
+    def recalCulateBFF(self,tbName,rawCOFITS,rmsFITS=None,meanrms =0.5):
+
+        data,headRaw=myFITS.readFITS(rawCOFITS)
+        Nz,Ny,Nx=data.shape
+        if rmsFITS is not None:
+            rmsData,rmsHead=doFITS.readFITS( rmsFITS )
+        else:
+
+            rmsData=np.zeros( (Ny,Nx)  )+meanrms
+        #TB=Table.read(TBFile)
+        #self.addCutOffFluxColnames(TB)
+        velResolution = headRaw["CDELT3"]/1000.
+
+        self.meanRMS=np.mean(rmsData)
+        self.velres= velResolution
 
 
+
+        TB=Table.read(tbName)
+        TB=TB[0:10]
+        TB=self.calculateFillingFactorCutoff( TB,  drawFigure= False ,dim=5 )
+
+        self.addMWISPFFerrorCutoff(TB)
+        TB.write( tbName,overwrite=True )
+        print TB
 
     def ZZZ(self):
         pass
+
+
+#doFF=myBFF()
+#doFF.recalCulateBFF("mosaic_U02dbscanS2P4Con1_Clean_BFF.fit","Q1Sub.fits" )
+
+#doFF.recalCulateBFF("mosaic_U02dbscanS2P4Con1_Clean_BFF.fit","Q1Sub.fits" )
+
 #for testing
 
 #doFF=myBFF()

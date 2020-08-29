@@ -702,6 +702,7 @@ class myBFF(object):
             errors = np.sqrt(np.diag(paramas_covariance))
 
         except:
+            params, paramas_covariance, useFunction = self.fittingCutOFF(x, y, yError, dim=dim)
 
             # params, paramas_covariance = optimize.curve_fit(useFunction, x, y, sigma=yError, absolute_sigma=True,
             # p0=p0My)

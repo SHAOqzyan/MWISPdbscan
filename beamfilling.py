@@ -903,6 +903,7 @@ class myBFF(object):
         self.meanRMS=np.mean(rmsData)
         self.velres= velResolution
 
+        print self.velres,"The value of velocity resolutuion  "
 
 
         TB=Table.read(tbName)

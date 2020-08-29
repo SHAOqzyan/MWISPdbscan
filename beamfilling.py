@@ -702,7 +702,7 @@ class myBFF(object):
             errors = np.sqrt(np.diag(paramas_covariance))
 
         except:
-            params, paramas_covariance, useFunction = self.fittingCutOFF(x, y, yError, dim=dim)
+            #params, paramas_covariance, useFunction = self.fittingCutOFF(x, y, yError, dim=dim)
 
             # params, paramas_covariance = optimize.curve_fit(useFunction, x, y, sigma=yError, absolute_sigma=True,
             # p0=p0My)
@@ -888,10 +888,9 @@ class myBFF(object):
         #
         #step2, get flux
 
-    def recalCulateBFF(self,tbName,rawCOFITS,rmsFITS=None,meanrms =0.5):
+    def recalCulateBFF(self,tbName,velResolution=0.2,  rmsFITS=None,meanrms =0.5):
 
-        data,headRaw=myFITS.readFITS(rawCOFITS)
-        Nz,Ny,Nx=data.shape
+
         if rmsFITS is not None:
             rmsData,rmsHead=doFITS.readFITS( rmsFITS )
         else:
@@ -899,16 +898,16 @@ class myBFF(object):
             rmsData=np.zeros( (Ny,Nx)  )+meanrms
         #TB=Table.read(TBFile)
         #self.addCutOffFluxColnames(TB)
-        velResolution = headRaw["CDELT3"]/1000.
 
-        self.meanRMS=np.mean(rmsData)
+
+        self.meanRMS=np.nanmean(rmsData)
         self.velres= velResolution
 
         print self.velres,"The value of velocity resolutuion  "
 
 
         TB=Table.read(tbName)
-        TB=TB[0:10]
+
         TB=self.calculateFillingFactorCutoff( TB,  drawFigure= False ,dim=5 )
 
         self.addMWISPFFerrorCutoff(TB)
@@ -919,8 +918,12 @@ class myBFF(object):
         pass
 
 
-#doFF=myBFF()
-#doFF.recalCulateBFF("mosaic_U02dbscanS2P4Con1_Clean_BFF.fit","Q1Sub.fits" )
+doFF=myBFF()
+doFF.recalCulateBFF("mosaic_U02dbscanS2P4Con1_Clean_BFF.fit", rmsFITS="/T620/ysu/t40160/mosaic_U02_rms.fits",velResolution=0.2 )
+doFF.recalCulateBFF("mosaic_L02dbscanS2P4Con1_Clean_BFF.fit", rmsFITS="/T620/ysu/t40160/mosaic_L02_rms.fits",velResolution=0.2 )
+
+doFF.recalCulateBFF("mosaic_U05_40160dbscanS2P4Con1_Clean_BFF.fit", rmsFITS="/T620/ysu/t40160/mosaic_U05_40160_rms.fits",velResolution=0.5 )
+doFF.recalCulateBFF("mosaic_L05_40160dbscanS2P4Con1_Clean_BFF.fit", rmsFITS="/T620/ysu/t40160/mosaic_L05_40160_rms.fits",velResolution=0.5 )
 
 #doFF.recalCulateBFF("mosaic_U02dbscanS2P4Con1_Clean_BFF.fit","Q1Sub.fits" )
 

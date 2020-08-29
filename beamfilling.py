@@ -883,7 +883,7 @@ class myBFF(object):
 
 
         self.addMWISPFFerrorCutoff(cleanTB,dim=5)
-        cleanTB.write( saveTBname )
+        cleanTB.write( saveTBname ,overwrite=True )
 
         #
         #step2, get flux

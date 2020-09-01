@@ -1635,18 +1635,23 @@ class myFITS:
 
 		fitsRead=fits.open(FITSName)
 
-		head=fitsRead[0].header
+
 		data=fitsRead[0].data
 
 		negative= data[data<0]
 
-		p=np.abs(negative)
 
-		variance=np.var(p,ddof=1)
+		return np.sqrt( np.mean( np.square(negative) ) )
 
-		ab=1-2./np.pi
+		#use the negative values at
 
-		return np.sqrt( variance/ab  )
+		#p=np.abs(negative)
+
+		#variance=np.var(p,ddof=1)
+
+		#ab=1-2./np.pi
+
+		#return np.sqrt( variance/ab  )
 
 	@staticmethod
 	def cropFITS2D(inFITS,outFITS=None, Lrange=None,Brange=None,overWrite=False):
@@ -1798,7 +1803,84 @@ class myFITS:
 		#self.l=l_input
 		#self.b=b_input
 
-	
+
+
+	@staticmethod
+	def TB1InTB2(TB1File,TB2File,testCol="_idx"):
+
+		"""
+		TB2 is the larger one
+		:param TB1File:
+		:param TB2File:
+		:return:
+		"""
+
+		TB1=Table.read(TB1File)
+		TB2= Table.read(TB2File)
+
+
+		index1=TB1[testCol ]
+		index2=TB2[testCol ]
+
+		selectCriteria = np.in1d(index2, index1 ) #
+
+		newTB1= TB2[ selectCriteria ]
+		newTB1.write("reduce_"+TB2File , overwrite=True)
+
+
+	@staticmethod
+	def drawBV(fitsName, saveFITS=None, RMS=0.5, cutLevel=3.):
+
+		if saveFITS == None:
+			saveFITS = fitsName[:-5] + "_BV.fits"
+
+		CO12HDU = fits.open(fitsName)[0]
+		data, head = CO12HDU.data, CO12HDU.header
+
+		wcs = WCS(head)
+
+		Nz, Ny, Nx = data.shape
+		#beginP = [0, (Ny - 1.) / 2.]
+
+		#endP = [(Nx), (Ny - 1.) / 2.]
+		beginP = [(Nx - 1.) / 2. , 0]
+
+		endP = [ (Nx - 1.) / 2.  ,  Ny  ]
+		widthPix = 2
+		from pvextractor import extract_pv_slice, Path
+
+		endpoints = [beginP, endP]
+		xy = Path(endpoints, width=widthPix)
+
+		pv = extract_pv_slice(CO12HDU, xy)
+
+		#os.system("rm " + saveFITS)
+
+		pv.writeto(saveFITS,overwrite=True)
+
+		if 1:  # modify the first
+
+			pvData, pvHead = myFITS.readFITS(saveFITS)
+
+			pvHead["CDELT1"] = head["CDELT2"]
+			pvHead["CRPIX1"] = head["CRPIX2"]
+			pvHead["NAXIS1"] = head["NAXIS2"]
+			pvHead["CRVAL1"] = head["CRVAL2"]
+
+		# data[data<cutLevel*RMS ]=0 #by default, we remove those emissions less than 3 sgima
+
+		# resolution
+		res = 30. / 3600.
+		PVData2D = np.sum(data, axis=2, dtype=float) * res
+
+		if PVData2D.shape == pvData.shape:
+			# .....
+			# os.system("rm " +saveFITS )
+
+			fits.writeto(saveFITS, PVData2D, header=pvHead, overwrite=True)
+		else:
+
+			print "The shape of pvdata with manual integration is unequal!"
 
 	@staticmethod
 	def drawLV(fitsName,saveFITS=None, RMS=0.5, cutLevel=3.):
@@ -1829,7 +1911,7 @@ class myFITS:
 		
 		
 		pv.writeto(saveFITS)
-		
+
 		if 1: #modify the first 
 	
 			pvData,pvHead=myFITS.readFITS( saveFITS )
@@ -1841,7 +1923,7 @@ class myFITS:
 			pvHead["CRVAL1"]=head["CRVAL1"]
 			
  
-		data[data<cutLevel*RMS ]=0 #by default, we remove those emissions less than 3 sgima
+		#data[data<cutLevel*RMS ]=0 #by default, we remove those emissions less than 3 sgima
 
 
 		# resolution
@@ -1853,10 +1935,9 @@ class myFITS:
 		
 		if PVData2D.shape==pvData.shape:
 			#.....
-			os.system("rm " +saveFITS )
-		
-				
-			fits.writeto(saveFITS,PVData2D,header=pvHead)
+			#os.system("rm " +saveFITS )
+
+			fits.writeto(saveFITS,PVData2D,header=pvHead,overwrite=True)
 		else:
  
 			print "The shape of pvdata with manual integration is unequal!"

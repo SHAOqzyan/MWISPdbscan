@@ -1117,5 +1117,32 @@ class  MWISPDBSCAN(object):
 
         saveTBAs=  inputTBFile[0:-5]+"_LW.fit"
         filterTB.write(saveTBAs, overwrite=True)
+
+    def selectTB(self, TB, rmsFITS=None,meanRMS=None,minVox=16,minChannel=3,hasBeam=1,minPeakSigma=5):
+
+        """
+
+        :param rmsFITS:
+        :param meanRMS:
+        :param minVox:
+        :param minChannel:
+        :param hasBeam:
+        :param minPeakSigma:
+        :return:
+        """
+
+        if rmsFITS is None and meanRMS is None:
+            return
+
+
+        if rmsFITS is not None:
+            if rmsFITS is not None:
+                rmsData, rmsHead = doFITS.readFITS(rmsFITS)
+
+            else:
+                rmsData =   meanrms
+
+
+
     def ZZZ(self):
         pass

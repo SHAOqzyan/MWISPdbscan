@@ -918,12 +918,12 @@ class myBFF(object):
         pass
 
 
-doFF=myBFF()
+#doFF=myBFF()
 
-doFF.getBFFcutoff(  "/T620/ysu/t40160/mosaic_U02.fits", "mosaic_U02dbscanS2P4Con1_Clean.fits",  "mosaic_U02dbscanS2P4Con1_Clean.fit",   rmsFITS="/T620/ysu/t40160/mosaic_U02_rms.fits" )
-doFF.getBFFcutoff(  "/T620/ysu/t40160/mosaic_L02.fits", "mosaic_L02dbscanS2P4Con1_Clean.fits", "mosaic_L02dbscanS2P4Con1_Clean.fit",rmsFITS="/T620/ysu/t40160/mosaic_L02_rms.fits" )
-doFF.getBFFcutoff(  "/T620/ysu/t40160/mosaic_U05_40160.fits", "mosaic_U05_40160dbscanS2P4Con1_Clean.fits", "mosaic_U05_40160dbscanS2P4Con1_Clean.fit",rmsFITS="/T620/ysu/t40160/mosaic_U05_40160_rms.fits" )
-doFF.getBFFcutoff(  "/T620/ysu/t40160/mosaic_L05_40160.fits", "mosaic_L05_40160dbscanS2P4Con1_Clean.fits", "mosaic_L05_40160dbscanS2P4Con1_Clean.fit",rmsFITS="/T620/ysu/t40160/mosaic_L05_40160_rms.fits" )
+#doFF.getBFFcutoff(  "/T620/ysu/t40160/mosaic_U02.fits", "mosaic_U02dbscanS2P4Con1_Clean.fits",  "mosaic_U02dbscanS2P4Con1_Clean.fit",   rmsFITS="/T620/ysu/t40160/mosaic_U02_rms.fits" )
+#doFF.getBFFcutoff(  "/T620/ysu/t40160/mosaic_L02.fits", "mosaic_L02dbscanS2P4Con1_Clean.fits", "mosaic_L02dbscanS2P4Con1_Clean.fit",rmsFITS="/T620/ysu/t40160/mosaic_L02_rms.fits" )
+#doFF.getBFFcutoff(  "/T620/ysu/t40160/mosaic_U05_40160.fits", "mosaic_U05_40160dbscanS2P4Con1_Clean.fits", "mosaic_U05_40160dbscanS2P4Con1_Clean.fit",rmsFITS="/T620/ysu/t40160/mosaic_U05_40160_rms.fits" )
+#doFF.getBFFcutoff(  "/T620/ysu/t40160/mosaic_L05_40160.fits", "mosaic_L05_40160dbscanS2P4Con1_Clean.fits", "mosaic_L05_40160dbscanS2P4Con1_Clean.fit",rmsFITS="/T620/ysu/t40160/mosaic_L05_40160_rms.fits" )
 
 
 
